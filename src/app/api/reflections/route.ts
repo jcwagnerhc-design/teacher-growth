@@ -42,6 +42,29 @@ function calculateReflectionXp(domains: string[], followUpResponse?: string): { 
   return { total, byDomain: xpByDomain }
 }
 
+// Helper to ensure demo user exists
+async function ensureUserExists(tx: TransactionClient, userId: string) {
+  let user = await tx.user.findUnique({ where: { id: userId } })
+
+  if (!user) {
+    // Create demo user if it doesn't exist
+    user = await tx.user.create({
+      data: {
+        id: userId,
+        email: `${userId}@demo.teachergrowth.app`,
+        name: 'Demo Teacher',
+        role: 'TEACHER',
+        totalXp: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        onboardingCompleted: true,
+      },
+    })
+  }
+
+  return user
+}
+
 // POST - Create a new reflection
 export async function POST(request: NextRequest) {
   try {
@@ -71,6 +94,9 @@ export async function POST(request: NextRequest) {
 
     // Create reflection and update user in transaction
     const result = await prisma.$transaction(async (tx: TransactionClient) => {
+      // Ensure user exists (creates demo user if needed)
+      const user = await ensureUserExists(tx, userId)
+
       // Create the reflection
       const reflection = await tx.reflection.create({
         data: {
@@ -97,32 +123,28 @@ export async function POST(request: NextRequest) {
       })
 
       // Update user total XP and streak
-      const user = await tx.user.findUnique({ where: { id: userId } })
+      let newStreak = user.currentStreak
+      const lastLog = user.lastLogDate
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
 
-      if (user) {
-        let newStreak = user.currentStreak
-        const lastLog = user.lastLogDate
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-
-        // Calculate streak
-        if (!lastLog || (!isToday(lastLog) && !isYesterday(lastLog))) {
-          newStreak = 1
-        } else if (isYesterday(lastLog)) {
-          newStreak += 1
-        }
-        // If isToday(lastLog), streak stays the same
-
-        await tx.user.update({
-          where: { id: userId },
-          data: {
-            totalXp: { increment: xpEarned },
-            currentStreak: newStreak,
-            longestStreak: Math.max(user.longestStreak, newStreak),
-            lastLogDate: today,
-          },
-        })
+      // Calculate streak
+      if (!lastLog || (!isToday(lastLog) && !isYesterday(lastLog))) {
+        newStreak = 1
+      } else if (isYesterday(lastLog)) {
+        newStreak += 1
       }
+      // If isToday(lastLog), streak stays the same
+
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          totalXp: { increment: xpEarned },
+          currentStreak: newStreak,
+          longestStreak: Math.max(user.longestStreak, newStreak),
+          lastLogDate: today,
+        },
+      })
 
       return reflection
     })

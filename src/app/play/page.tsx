@@ -892,9 +892,13 @@ export default function PlayPage() {
               <BookOpen className="w-6 h-6" />
               <span className="text-xs">Log</span>
             </button>
-            <button onClick={() => router.push('/play/quests')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-400 transition-colors">
-              <Scroll className="w-6 h-6" />
-              <span className="text-xs">Missions</span>
+            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-400 transition-colors">
+              <Sparkles className="w-6 h-6" />
+              <span className="text-xs">Journal</span>
+            </button>
+            <button onClick={() => router.push('/play/progress')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-cyan-400 transition-colors">
+              <BarChart3 className="w-6 h-6" />
+              <span className="text-xs">Progress</span>
             </button>
             <button onClick={() => router.push('/play/profile')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-emerald-400 transition-colors">
               <Award className="w-6 h-6" />

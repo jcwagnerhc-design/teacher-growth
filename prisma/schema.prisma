@@ -1,0 +1,326 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & AUTH
+// ============================================
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  role          Role     @default(TEACHER)
+  gradeLevel    String?  @map("grade_level")
+  subject       String?
+  schoolName    String?  @map("school_name")
+  focusAreas    String[] @map("focus_areas") // Category slugs
+
+  // Gamification state (denormalized for read speed)
+  totalXp       Int      @default(0) @map("total_xp")
+  currentStreak Int      @default(0) @map("current_streak")
+  longestStreak Int      @default(0) @map("longest_streak")
+  lastLogDate   DateTime? @map("last_log_date") @db.Date
+
+  // Onboarding
+  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  signals             Signal[]
+  artifacts           Artifact[]
+  xpLedger            XpLedger[]
+  subskillProgress    UserSubskillProgress[]
+  questCompletions    QuestCompletion[]
+  reflections         Reflection[]
+  badges              UserBadge[]
+  sharingAsTeacher    SharingPermission[] @relation("TeacherSharing")
+  sharingAsViewer     SharingPermission[] @relation("ViewerSharing")
+
+  @@map("users")
+}
+
+enum Role {
+  TEACHER
+  COACH
+  ADMIN
+}
+
+// ============================================
+// SKILL TAXONOMY
+// ============================================
+
+model Category {
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  name         String
+  description  String?
+  displayOrder Int      @map("display_order")
+  icon         String?  // Emoji or icon name
+
+  subskills    Subskill[]
+
+  @@map("categories")
+}
+
+model Subskill {
+  id           String   @id @default(uuid())
+  categoryId   String   @map("category_id")
+  slug         String   @unique
+  name         String
+  definition   String?
+  behaviors    String[] // Observable behaviors
+  antiPatterns String[] @map("anti_patterns")
+  displayOrder Int      @map("display_order")
+
+  category         Category              @relation(fields: [categoryId], references: [id])
+  signalTemplates  SignalTemplate[]
+  signals          Signal[]
+  userProgress     UserSubskillProgress[]
+  reflections      Reflection[]
+
+  @@map("subskills")
+}
+
+model SignalTemplate {
+  id         String   @id @default(uuid())
+  subskillId String   @map("subskill_id")
+  prompt     String   // e.g., "Wrote/revised objectives today"
+  xpValue    Int      @default(10) @map("xp_value")
+  isActive   Boolean  @default(true) @map("is_active")
+
+  subskill   Subskill @relation(fields: [subskillId], references: [id])
+  signals    Signal[]
+
+  @@map("signal_templates")
+}
+
+// ============================================
+// SIGNALS & EVIDENCE
+// ============================================
+
+model Signal {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  subskillId       String   @map("subskill_id")
+  signalTemplateId String?  @map("signal_template_id")
+
+  loggedForDate    DateTime @map("logged_for_date") @db.Date
+  note             String?  // Optional reflection
+  xpEarned         Int      @map("xp_earned")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user             User           @relation(fields: [userId], references: [id])
+  subskill         Subskill       @relation(fields: [subskillId], references: [id])
+  signalTemplate   SignalTemplate? @relation(fields: [signalTemplateId], references: [id])
+  artifacts        Artifact[]
+
+  @@index([userId, loggedForDate])
+  @@map("signals")
+}
+
+model Artifact {
+  id           String       @id @default(uuid())
+  signalId     String       @map("signal_id")
+  userId       String       @map("user_id")
+
+  artifactType ArtifactType @map("artifact_type")
+  url          String?      // For links
+  filePath     String?      @map("file_path") // For uploads
+  description  String?
+
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  signal       Signal       @relation(fields: [signalId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@map("artifacts")
+}
+
+enum ArtifactType {
+  LINK
+  FILE
+  TEXT
+}
+
+// ============================================
+// XP & PROGRESSION
+// ============================================
+
+model XpLedger {
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+
+  xpAmount    Int        @map("xp_amount")
+  sourceType  XpSource   @map("source_type")
+  sourceId    String?    @map("source_id")
+  description String?
+
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  user        User       @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("xp_ledger")
+}
+
+enum XpSource {
+  SIGNAL
+  QUEST
+  STREAK
+  REFLECTION
+  VARIETY_BONUS
+  ARTIFACT_BONUS
+}
+
+model UserSubskillProgress {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  subskillId     String   @map("subskill_id")
+
+  xpEarned       Int      @default(0) @map("xp_earned")
+  level          Int      @default(1)
+  signalCount    Int      @default(0) @map("signal_count")
+  lastSignalDate DateTime? @map("last_signal_date") @db.Date
+
+  user           User     @relation(fields: [userId], references: [id])
+  subskill       Subskill @relation(fields: [subskillId], references: [id])
+
+  @@unique([userId, subskillId])
+  @@map("user_subskill_progress")
+}
+
+// ============================================
+// QUESTS
+// ============================================
+
+model Quest {
+  id          String    @id @default(uuid())
+  slug        String    @unique
+  title       String
+  description String?
+  questType   QuestType @map("quest_type")
+
+  // Criteria as JSON for flexibility
+  criteria    Json
+
+  xpReward    Int       @map("xp_reward")
+  isActive    Boolean   @default(true) @map("is_active")
+
+  completions QuestCompletion[]
+
+  @@map("quests")
+}
+
+enum QuestType {
+  DAILY
+  WEEKLY
+  BOSS
+}
+
+model QuestCompletion {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  questId     String   @map("quest_id")
+
+  completedAt DateTime @default(now()) @map("completed_at")
+  xpEarned    Int      @map("xp_earned")
+  reflection  String?  // Required for boss fights
+  periodStart DateTime? @map("period_start") @db.Date // For repeatable quests
+
+  user        User     @relation(fields: [userId], references: [id])
+  quest       Quest    @relation(fields: [questId], references: [id])
+
+  @@unique([userId, questId, periodStart])
+  @@map("quest_completions")
+}
+
+// ============================================
+// REFLECTIONS
+// ============================================
+
+model Reflection {
+  id             String         @id @default(uuid())
+  userId         String         @map("user_id")
+
+  reflectionType ReflectionType @map("reflection_type")
+  subskillId     String?        @map("subskill_id")
+
+  prompt         String?
+  response       String
+  xpEarned       Int            @default(0) @map("xp_earned")
+
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  user           User           @relation(fields: [userId], references: [id])
+  subskill       Subskill?      @relation(fields: [subskillId], references: [id])
+
+  @@map("reflections")
+}
+
+enum ReflectionType {
+  WEEKLY
+  MILESTONE
+  BOSS
+}
+
+// ============================================
+// BADGES
+// ============================================
+
+model Badge {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  description String?
+  icon        String?
+  criteria    Json     // Evaluation criteria
+
+  userBadges  UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(uuid())
+  userId   String   @map("user_id")
+  badgeId  String   @map("badge_id")
+  earnedAt DateTime @default(now()) @map("earned_at")
+
+  user     User     @relation(fields: [userId], references: [id])
+  badge    Badge    @relation(fields: [badgeId], references: [id])
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+// ============================================
+// SHARING & PERMISSIONS
+// ============================================
+
+model SharingPermission {
+  id               String   @id @default(uuid())
+  teacherId        String   @map("teacher_id")
+  viewerId         String   @map("viewer_id")
+
+  canViewProgress  Boolean  @default(true) @map("can_view_progress")
+  canViewSignals   Boolean  @default(false) @map("can_view_signals")
+  canViewReflections Boolean @default(false) @map("can_view_reflections")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  revokedAt        DateTime? @map("revoked_at")
+
+  teacher          User     @relation("TeacherSharing", fields: [teacherId], references: [id])
+  viewer           User     @relation("ViewerSharing", fields: [viewerId], references: [id])
+
+  @@unique([teacherId, viewerId])
+  @@map("sharing_permissions")
+}

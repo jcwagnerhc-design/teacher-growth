@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -16,8 +16,12 @@ import {
   BarChart3,
   Heart,
   Star,
+  AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+// Demo user ID for development - in production this would come from auth
+const DEMO_USER_ID = 'demo-user-001'
 
 const MOMENT_PROMPTS = [
   "A student said something that surprised you",
@@ -117,6 +121,7 @@ export default function ReflectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const [growthByDomain, setGrowthByDomain] = useState<Record<string, number>>({})
+  const [error, setError] = useState<string | null>(null)
   const [randomPrompt] = useState(() => MOMENT_PROMPTS[Math.floor(Math.random() * MOMENT_PROMPTS.length)])
   const [randomFollowUp] = useState(() => FOLLOW_UP_QUESTIONS[Math.floor(Math.random() * FOLLOW_UP_QUESTIONS.length)])
 
@@ -156,12 +161,50 @@ export default function ReflectPage() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
-    const growth = calculateGrowth()
-    setGrowthByDomain(growth)
-    localStorage.setItem('recent-growth', JSON.stringify(growth))
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsSubmitting(false)
-    setIsComplete(true)
+    setError(null)
+
+    try {
+      // Call the API to persist the reflection
+      const response = await fetch('/api/reflections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: DEMO_USER_ID,
+          primaryResponse: moment,
+          followUpResponse: followUp || undefined,
+          domains: selectedDomains,
+          prompt: randomPrompt,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save reflection')
+      }
+
+      const data = await response.json()
+
+      // Use the XP breakdown from the API response
+      setGrowthByDomain(data.xpByDomain)
+
+      // Store in localStorage for immediate UI feedback on the play page
+      localStorage.setItem('recent-growth', JSON.stringify(data.xpByDomain))
+
+      setIsComplete(true)
+    } catch (err) {
+      console.error('Failed to save reflection:', err)
+      setError(err instanceof Error ? err.message : 'Failed to save reflection')
+
+      // Fallback: use calculated growth for UI even if API fails
+      const growth = calculateGrowth()
+      setGrowthByDomain(growth)
+      localStorage.setItem('recent-growth', JSON.stringify(growth))
+      setIsComplete(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isComplete) {

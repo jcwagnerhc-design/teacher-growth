@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -23,8 +23,13 @@ import {
   Target,
   Award,
   Rocket,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+// Demo user ID for development - in production this would come from auth
+const DEMO_USER_ID = 'demo-user-001'
+const PAGE_SIZE = 20
 
 // Domain configuration
 const DOMAINS = [
@@ -34,90 +39,31 @@ const DOMAINS = [
   { id: 'assessment', name: 'Student Work', icon: Star, color: 'amber' },
 ]
 
-// Mock reflection data - in real app this would come from localStorage or API
-const MOCK_REFLECTIONS = [
-  {
-    id: '1',
-    date: '2026-01-17',
-    domain: 'instruction',
-    skill: 'Questioning Strategies',
-    primaryResponse: 'Today I tried using wait time after asking a question about the Civil War. I counted to 7 in my head before calling on anyone. More hands went up than usual!',
-    followUpResponse: 'I noticed that the quieter students like Maria and James actually raised their hands. I think the extra wait time gave them confidence.',
-    imageUrl: null,
-    xpEarned: 25,
-  },
-  {
-    id: '2',
-    date: '2026-01-16',
-    domain: 'environment',
-    skill: 'Building Relationships',
-    primaryResponse: 'Greeted each student by name at the door today. Asked Marcus about his basketball game.',
-    followUpResponse: 'Marcus was more engaged during class. He even volunteered to help pass out materials.',
-    imageUrl: '/mock-image.jpg',
-    xpEarned: 30,
-  },
-  {
-    id: '3',
-    date: '2026-01-15',
-    domain: 'instruction',
-    skill: 'Student Engagement',
-    primaryResponse: 'Used a think-pair-share for the main concept. Students discussed with partners before whole-class sharing.',
-    followUpResponse: 'The energy in the room was noticeably higher. Even students who usually disengage were talking to their partners.',
-    imageUrl: null,
-    xpEarned: 25,
-  },
-  {
-    id: '4',
-    date: '2026-01-14',
-    domain: 'assessment',
-    skill: 'Formative Assessment',
-    primaryResponse: 'Used exit tickets with a 1-5 scale plus one question they still have.',
-    followUpResponse: 'About 60% rated themselves 4+. The questions they wrote helped me see where confusion still exists.',
-    imageUrl: null,
-    xpEarned: 25,
-  },
-  {
-    id: '5',
-    date: '2026-01-13',
-    domain: 'planning',
-    skill: 'Clear Learning Objectives',
-    primaryResponse: 'Posted the learning target and had students read it aloud at the start of class.',
-    followUpResponse: 'At the end of class, I asked students to rate if we hit the target. Most said yes and could explain why.',
-    imageUrl: null,
-    xpEarned: 25,
-  },
-  {
-    id: '6',
-    date: '2026-01-12',
-    domain: 'instruction',
-    skill: 'Questioning Strategies',
-    primaryResponse: 'Asked follow-up probing questions instead of just accepting first answers.',
-    followUpResponse: 'Students started adding more depth to their initial responses without me asking.',
-    imageUrl: null,
-    xpEarned: 25,
-  },
-  {
-    id: '7',
-    date: '2026-01-10',
-    domain: 'environment',
-    skill: 'Classroom Culture',
-    primaryResponse: 'When a student made a mistake, I celebrated it as a learning moment. Said "Thank you for that mistake - it helps us all learn."',
-    followUpResponse: 'Other students seemed less afraid to answer. The class felt safer.',
-    imageUrl: null,
-    xpEarned: 25,
-  },
-]
+interface Reflection {
+  id: string
+  createdAt: string
+  domains: string[]
+  primaryResponse: string
+  followUpResponse: string | null
+  xpEarned: number
+  xpByDomain: Record<string, number> | null
+  prompt: string | null
+}
 
 // Calculate insights from reflections
-function calculateInsights(reflections: typeof MOCK_REFLECTIONS) {
+function calculateInsights(reflections: Reflection[]) {
   const domainCounts: Record<string, number> = {}
-  const skillCounts: Record<string, number> = {}
   const recentDomains: string[] = []
 
   reflections.forEach((r, i) => {
-    domainCounts[r.domain] = (domainCounts[r.domain] || 0) + 1
-    skillCounts[r.skill] = (skillCounts[r.skill] || 0) + 1
-    if (i < 5) recentDomains.push(r.domain)
+    // Count domains - each reflection can have multiple domains
+    r.domains.forEach(domain => {
+      domainCounts[domain] = (domainCounts[domain] || 0) + 1
+    })
+    // Track recent domains for focus detection
+    if (i < 5 && r.domains.length > 0) {
+      recentDomains.push(r.domains[0])
+    }
   })
 
   // Find most reflected domain
@@ -127,9 +73,6 @@ function calculateInsights(reflections: typeof MOCK_REFLECTIONS) {
   const allDomains = ['planning', 'environment', 'instruction', 'assessment']
   const leastDomain = allDomains.find(d => !domainCounts[d]) ||
     Object.entries(domainCounts).sort((a, b) => a[1] - b[1])[0]?.[0]
-
-  // Find recurring skill
-  const topSkill = Object.entries(skillCounts).sort((a, b) => b[1] - a[1])[0]
 
   // Check for patterns in recent reflections
   const recentDomainCounts: Record<string, number> = {}
@@ -142,7 +85,6 @@ function calculateInsights(reflections: typeof MOCK_REFLECTIONS) {
     totalReflections: reflections.length,
     topDomain: topDomain ? { id: topDomain[0], count: topDomain[1] } : null,
     leastDomain: leastDomain ? { id: leastDomain, count: domainCounts[leastDomain] || 0 } : null,
-    topSkill: topSkill ? { name: topSkill[0], count: topSkill[1] } : null,
     focusedDomain,
     totalXp: reflections.reduce((sum, r) => sum + r.xpEarned, 0),
   }
@@ -150,14 +92,62 @@ function calculateInsights(reflections: typeof MOCK_REFLECTIONS) {
 
 export default function JournalPage() {
   const router = useRouter()
-  const [reflections, setReflections] = useState(MOCK_REFLECTIONS)
+  const [reflections, setReflections] = useState<Reflection[]>([])
   const [filterDomain, setFilterDomain] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showInsights, setShowInsights] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [offset, setOffset] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredReflections = filterDomain
-    ? reflections.filter(r => r.domain === filterDomain)
-    : reflections
+  // Fetch reflections from API
+  const fetchReflections = useCallback(async (domain: string | null, currentOffset: number, append: boolean = false) => {
+    try {
+      const params = new URLSearchParams({
+        userId: DEMO_USER_ID,
+        limit: PAGE_SIZE.toString(),
+        offset: currentOffset.toString(),
+      })
+      if (domain) {
+        params.set('domain', domain)
+      }
+
+      const response = await fetch(`/api/reflections?${params}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch reflections')
+      }
+
+      const data = await response.json()
+
+      if (append) {
+        setReflections(prev => [...prev, ...data.reflections])
+      } else {
+        setReflections(data.reflections)
+      }
+
+      setHasMore(data.pagination.hasMore)
+      setOffset(currentOffset + data.reflections.length)
+    } catch (err) {
+      console.error('Failed to fetch reflections:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch reflections')
+    }
+  }, [])
+
+  // Initial load and filter changes
+  useEffect(() => {
+    setIsLoading(true)
+    setOffset(0)
+    fetchReflections(filterDomain, 0).finally(() => setIsLoading(false))
+  }, [filterDomain, fetchReflections])
+
+  // Load more handler
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true)
+    await fetchReflections(filterDomain, offset, true)
+    setIsLoadingMore(false)
+  }
 
   const insights = calculateInsights(reflections)
 
@@ -181,10 +171,26 @@ export default function JournalPage() {
     const yesterday = new Date(today)
     yesterday.setDate(yesterday.getDate() - 1)
 
-    if (dateStr === today.toISOString().split('T')[0]) return 'Today'
-    if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yesterday'
+    const dateOnly = date.toISOString().split('T')[0]
+    if (dateOnly === today.toISOString().split('T')[0]) return 'Today'
+    if (dateOnly === yesterday.toISOString().split('T')[0]) return 'Yesterday'
 
     return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  }
+
+  // Get primary domain for a reflection
+  const getPrimaryDomain = (reflection: Reflection) => {
+    return reflection.domains[0] || 'instruction'
+  }
+
+  // Get domain label for display
+  const getDomainLabel = (reflection: Reflection) => {
+    if (reflection.domains.length === 0) return 'Daily Moment'
+    if (reflection.domains.length === 1) {
+      const domain = getDomainConfig(reflection.domains[0])
+      return domain.name
+    }
+    return `${reflection.domains.length} domains`
   }
 
   return (
@@ -282,20 +288,6 @@ export default function JournalPage() {
                         <p className="text-sm font-medium">Growth Opportunity</p>
                         <p className="text-xs text-slate-400">
                           Consider reflecting more on <span className={getColorClasses(getDomainConfig(insights.leastDomain.id).color).text}>{getDomainConfig(insights.leastDomain.id).name}</span> - you&apos;ve only logged {insights.leastDomain.count} reflection{insights.leastDomain.count !== 1 ? 's' : ''} there.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {insights.topSkill && insights.topSkill.count >= 2 && (
-                    <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-lg">
-                      <div className="p-2 rounded-lg bg-amber-500">
-                        <Star className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Developing Skill</p>
-                        <p className="text-xs text-slate-400">
-                          You keep coming back to <span className="text-amber-400">{insights.topSkill.name}</span>. This consistent practice is building expertise!
                         </p>
                       </div>
                     </div>

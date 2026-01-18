@@ -248,21 +248,25 @@ model QuestCompletion {
 // ============================================
 
 model Reflection {
-  id             String         @id @default(uuid())
-  userId         String         @map("user_id")
+  id              String         @id @default(uuid())
+  userId          String         @map("user_id")
 
-  reflectionType ReflectionType @map("reflection_type")
-  subskillId     String?        @map("subskill_id")
+  reflectionType  ReflectionType @map("reflection_type")
+  subskillId      String?        @map("subskill_id")
 
-  prompt         String?
-  response       String
-  xpEarned       Int            @default(0) @map("xp_earned")
+  prompt          String?
+  primaryResponse String         @map("primary_response")
+  followUpResponse String?       @map("follow_up_response")
+  domains         String[]       // Selected domain IDs (e.g., ["planning", "instruction"])
+  xpByDomain      Json?          @map("xp_by_domain") // { "planning": 15, "instruction": 35 }
+  xpEarned        Int            @default(0) @map("xp_earned")
 
-  createdAt      DateTime       @default(now()) @map("created_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
 
-  user           User           @relation(fields: [userId], references: [id])
-  subskill       Subskill?      @relation(fields: [subskillId], references: [id])
+  user            User           @relation(fields: [userId], references: [id])
+  subskill        Subskill?      @relation(fields: [subskillId], references: [id])
 
+  @@index([userId, createdAt])
   @@map("reflections")
 }
 
@@ -270,6 +274,7 @@ enum ReflectionType {
   WEEKLY
   MILESTONE
   BOSS
+  DAILY_MOMENT
 }
 
 // ============================================

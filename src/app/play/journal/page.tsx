@@ -353,96 +353,11 @@ export default function JournalPage() {
 
         {/* Reflections List */}
         <div className="space-y-3">
-          {filteredReflections.map((reflection, i) => {
-            const domain = getDomainConfig(reflection.domain)
-            const colors = getColorClasses(domain.color)
-            const isExpanded = expandedId === reflection.id
-
-            return (
-              <motion.div
-                key={reflection.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.05 }}
-                className={cn(
-                  'bg-slate-900/50 border rounded-xl overflow-hidden transition-all',
-                  isExpanded ? colors.border : 'border-slate-800'
-                )}
-              >
-                <button
-                  onClick={() => setExpandedId(isExpanded ? null : reflection.id)}
-                  className="w-full p-4 text-left"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={cn('p-2 rounded-lg', colors.bg)}>
-                      <domain.icon className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{reflection.skill}</span>
-                        {reflection.imageUrl && (
-                          <ImageIcon className="w-4 h-4 text-slate-500" />
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-400 line-clamp-2">
-                        {reflection.primaryResponse}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-slate-500 mb-1">{formatDate(reflection.date)}</p>
-                      <p className="text-xs text-amber-400">+{reflection.xpEarned} XP</p>
-                    </div>
-                    <ChevronRight className={cn('w-5 h-5 text-slate-500 transition-transform', isExpanded && 'rotate-90')} />
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: 'auto' }}
-                      exit={{ height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 pb-4 space-y-4">
-                        <div className="h-px bg-slate-800" />
-
-                        <div>
-                          <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">What happened</p>
-                          <p className="text-sm text-slate-300">{reflection.primaryResponse}</p>
-                        </div>
-
-                        {reflection.followUpResponse && (
-                          <div>
-                            <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Your reflection</p>
-                            <p className="text-sm text-slate-300">{reflection.followUpResponse}</p>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-4 text-xs text-slate-500">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(reflection.date).toLocaleDateString('en-US', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </span>
-                          <span className={cn('flex items-center gap-1', colors.text)}>
-                            <domain.icon className="w-3 h-3" />
-                            {domain.name}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )
-          })}
-
-          {filteredReflections.length === 0 && (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+            </div>
+          ) : reflections.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="w-12 h-12 text-slate-700 mx-auto mb-4" />
               <p className="text-slate-500">No reflections in this area yet.</p>
@@ -453,6 +368,139 @@ export default function JournalPage() {
                 Start Reflecting
               </button>
             </div>
+          ) : (
+            <>
+              {reflections.map((reflection, i) => {
+                const primaryDomainId = getPrimaryDomain(reflection)
+                const domain = getDomainConfig(primaryDomainId)
+                const colors = getColorClasses(domain.color)
+                const isExpanded = expandedId === reflection.id
+
+                return (
+                  <motion.div
+                    key={reflection.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.05, 0.3) }}
+                    className={cn(
+                      'bg-slate-900/50 border rounded-xl overflow-hidden transition-all',
+                      isExpanded ? colors.border : 'border-slate-800'
+                    )}
+                  >
+                    <button
+                      onClick={() => setExpandedId(isExpanded ? null : reflection.id)}
+                      className="w-full p-4 text-left"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={cn('p-2 rounded-lg', colors.bg)}>
+                          <domain.icon className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium">{getDomainLabel(reflection)}</span>
+                            {reflection.domains.length > 1 && (
+                              <span className="text-xs text-slate-500">
+                                ({reflection.domains.map(d => getDomainConfig(d).name).join(', ')})
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-400 line-clamp-2">
+                            {reflection.primaryResponse}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-slate-500 mb-1">{formatDate(reflection.createdAt)}</p>
+                          <p className="text-xs text-amber-400">+{reflection.xpEarned} XP</p>
+                        </div>
+                        <ChevronRight className={cn('w-5 h-5 text-slate-500 transition-transform', isExpanded && 'rotate-90')} />
+                      </div>
+                    </button>
+
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: 'auto' }}
+                          exit={{ height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 space-y-4">
+                            <div className="h-px bg-slate-800" />
+
+                            <div>
+                              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">What happened</p>
+                              <p className="text-sm text-slate-300">{reflection.primaryResponse}</p>
+                            </div>
+
+                            {reflection.followUpResponse && (
+                              <div>
+                                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Your reflection</p>
+                                <p className="text-sm text-slate-300">{reflection.followUpResponse}</p>
+                              </div>
+                            )}
+
+                            {/* XP Breakdown by domain */}
+                            {reflection.xpByDomain && Object.keys(reflection.xpByDomain).length > 0 && (
+                              <div>
+                                <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">XP Earned</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {Object.entries(reflection.xpByDomain).map(([domainId, xp]) => {
+                                    const d = getDomainConfig(domainId)
+                                    const c = getColorClasses(d.color)
+                                    return (
+                                      <span key={domainId} className={cn('flex items-center gap-1 text-xs px-2 py-1 rounded-full border', c.border, c.text)}>
+                                        <d.icon className="w-3 h-3" />
+                                        {d.name}: +{xp}
+                                      </span>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-4 text-xs text-slate-500">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(reflection.createdAt).toLocaleDateString('en-US', {
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
+                              <span className={cn('flex items-center gap-1', colors.text)}>
+                                <domain.icon className="w-3 h-3" />
+                                {domain.name}
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                )
+              })}
+
+              {/* Load More Button */}
+              {hasMore && (
+                <div className="text-center pt-4">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More'
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

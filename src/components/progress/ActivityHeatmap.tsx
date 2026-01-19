@@ -19,10 +19,10 @@ interface ActivityHeatmapProps {
 
 const LEVEL_COLORS = [
   'bg-slate-800', // 0 - no activity
-  'bg-emerald-900/50', // 1 - light
-  'bg-emerald-700/60', // 2 - medium-light
-  'bg-emerald-500/70', // 3 - medium
-  'bg-emerald-400', // 4 - high
+  'bg-[#1e3a5f]/50', // 1 - light (Blair navy)
+  'bg-[#2d5a87]/60', // 2 - medium-light
+  'bg-[#4a7ba8]/70', // 3 - medium
+  'bg-[#7db4e0]', // 4 - high (Blair light blue)
 ]
 
 const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']

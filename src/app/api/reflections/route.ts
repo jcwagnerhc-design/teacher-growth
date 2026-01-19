@@ -9,6 +9,8 @@ interface ReflectionInput {
   primaryResponse: string
   followUpResponse?: string
   domains: string[]
+  skillId?: string
+  skillName?: string
   prompt?: string
 }
 
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as ReflectionInput
 
-    const { userId, primaryResponse, followUpResponse, domains, prompt } = body
+    const { userId, primaryResponse, followUpResponse, domains, skillId, skillName, prompt } = body
 
     if (!userId || !primaryResponse) {
       return NextResponse.json(
@@ -105,6 +107,8 @@ export async function POST(request: NextRequest) {
           primaryResponse,
           followUpResponse: followUpResponse || null,
           domains: domains || [],
+          skillId: skillId || null,
+          skillName: skillName || null,
           xpByDomain,
           xpEarned,
           prompt: prompt || null,
@@ -146,18 +150,97 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      return reflection
+      // Update relevant goals
+      // Find active goals that match this reflection
+      const activeGoals = await tx.goal.findMany({
+        where: {
+          userId,
+          status: 'ACTIVE',
+        },
+      })
+
+      // Track goals that need updating
+      const goalsToUpdate: { id: string; newValue: number }[] = []
+
+      for (const goal of activeGoals) {
+        let shouldIncrement = false
+
+        switch (goal.targetType) {
+          case 'REFLECTION_COUNT':
+            // Any reflection counts toward this goal
+            shouldIncrement = true
+            break
+
+          case 'SKILL_FOCUS':
+            // Only reflections with matching skillId
+            if (goal.targetSkillId && skillId === goal.targetSkillId) {
+              shouldIncrement = true
+            }
+            break
+
+          case 'DOMAIN_FOCUS':
+            // Only reflections with matching domain
+            if (goal.targetDomain && domains?.includes(goal.targetDomain)) {
+              shouldIncrement = true
+            }
+            break
+        }
+
+        if (shouldIncrement) {
+          goalsToUpdate.push({
+            id: goal.id,
+            newValue: goal.currentValue + 1,
+          })
+        }
+      }
+
+      // Update goals and auto-complete if target reached
+      const updatedGoals: Array<{
+        id: string
+        title: string
+        currentValue: number
+        targetValue: number
+        completed: boolean
+      }> = []
+
+      for (const goalUpdate of goalsToUpdate) {
+        const goal = activeGoals.find(g => g.id === goalUpdate.id)!
+        const isComplete = goalUpdate.newValue >= goal.targetValue
+
+        await tx.goal.update({
+          where: { id: goalUpdate.id },
+          data: {
+            currentValue: goalUpdate.newValue,
+            ...(isComplete ? {
+              status: 'COMPLETED',
+              completedAt: new Date(),
+            } : {}),
+          },
+        })
+
+        updatedGoals.push({
+          id: goal.id,
+          title: goal.title,
+          currentValue: goalUpdate.newValue,
+          targetValue: goal.targetValue,
+          completed: isComplete,
+        })
+      }
+
+      return { reflection, updatedGoals }
     })
 
     return NextResponse.json({
-      reflection: result,
+      reflection: result.reflection,
       xpEarned,
       xpByDomain,
+      goalsUpdated: result.updatedGoals,
     })
   } catch (error) {
     console.error('Failed to create reflection:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to create reflection' },
+      { error: 'Failed to create reflection', details: message },
       { status: 500 }
     )
   }
@@ -170,6 +253,7 @@ export async function GET(request: NextRequest) {
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
   const domain = searchParams.get('domain')
+  const search = searchParams.get('search')
   const limit = parseInt(searchParams.get('limit') || '20', 10)
   const offset = parseInt(searchParams.get('offset') || '0', 10)
 
@@ -179,11 +263,8 @@ export async function GET(request: NextRequest) {
 
   try {
     // Build where clause
-    const where: {
-      userId: string
-      createdAt?: { gte?: Date; lte?: Date }
-      domains?: { has: string }
-    } = { userId }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = { userId }
 
     // Date range filter
     if (startDate || endDate) {
@@ -201,6 +282,15 @@ export async function GET(request: NextRequest) {
     // Domain filter - check if the domain is in the domains array
     if (domain) {
       where.domains = { has: domain }
+    }
+
+    // Search filter - search in primaryResponse, followUpResponse, and skillName
+    if (search && search.trim()) {
+      where.OR = [
+        { primaryResponse: { contains: search, mode: 'insensitive' } },
+        { followUpResponse: { contains: search, mode: 'insensitive' } },
+        { skillName: { contains: search, mode: 'insensitive' } },
+      ]
     }
 
     // Get total count for pagination

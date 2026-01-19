@@ -9,7 +9,6 @@ import {
   Star,
   X,
   BookOpen,
-  Award,
   Sparkles,
   ClipboardList,
   Presentation,
@@ -17,40 +16,30 @@ import {
   Heart,
   Settings,
   Scroll,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
   Plus,
   ChevronRight,
   ChevronLeft,
   Camera,
   Trash2,
   Rocket,
+  Target,
+  TrendingUp,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import PixelCharacter, { DEFAULT_CHARACTER, CharacterCustomization } from '@/components/PixelCharacter'
+import { GoalCard, Goal } from '@/components/goals'
 
-// Floating stars component for space theme - uses seeded positions to avoid hydration mismatch
+// Demo user ID
+const DEMO_USER_ID = 'demo-user-001'
+
+// Subtle floating stars - reduced count for cleaner look
 const STAR_POSITIONS = [
-  { left: 14.3, top: 60.8, size: 3 }, { left: 51.4, top: 74.9, size: 2 }, { left: 95.7, top: 6.8, size: 2 },
-  { left: 33.6, top: 7.9, size: 1 }, { left: 68.8, top: 24.2, size: 2 }, { left: 68.3, top: 62.7, size: 1 },
-  { left: 91.6, top: 26.7, size: 2 }, { left: 61.6, top: 70.5, size: 1 }, { left: 11.8, top: 53.6, size: 3 },
-  { left: 33.6, top: 45.6, size: 1 }, { left: 97.4, top: 20.2, size: 2 }, { left: 39.2, top: 91.5, size: 2 },
-  { left: 26.8, top: 90.4, size: 2 }, { left: 15.8, top: 58.5, size: 1 }, { left: 59.9, top: 62.6, size: 2 },
-  { left: 36.5, top: 65.1, size: 2 }, { left: 84.2, top: 14.7, size: 1 }, { left: 63.8, top: 40.4, size: 1 },
-  { left: 29.6, top: 91.2, size: 3 }, { left: 31.8, top: 83.8, size: 2 }, { left: 10.2, top: 2.6, size: 1 },
-  { left: 87.7, top: 11.3, size: 2 }, { left: 65.3, top: 59.3, size: 2 }, { left: 42.8, top: 39.1, size: 2 },
-  { left: 61.9, top: 94.8, size: 3 }, { left: 76.7, top: 98.7, size: 3 }, { left: 6.5, top: 31.9, size: 2 },
-  { left: 76.8, top: 13.6, size: 2 }, { left: 73.1, top: 47.5, size: 1 }, { left: 26.0, top: 73.0, size: 1 },
-  { left: 83.2, top: 16.7, size: 2 }, { left: 73.5, top: 6.0, size: 2 }, { left: 32.4, top: 1.6, size: 2 },
-  { left: 79.6, top: 54.7, size: 1 }, { left: 43.0, top: 45.6, size: 2 }, { left: 95.2, top: 95.4, size: 1 },
-  { left: 26.0, top: 85.7, size: 3 }, { left: 31.5, top: 5.2, size: 1 }, { left: 81.5, top: 49.0, size: 1 },
-  { left: 16.4, top: 22.0, size: 1 }, { left: 55.4, top: 19.0, size: 2 }, { left: 31.8, top: 40.8, size: 2 },
-  { left: 97.6, top: 43.9, size: 1 }, { left: 23.0, top: 73.8, size: 1 }, { left: 28.9, top: 14.6, size: 3 },
-  { left: 3.3, top: 77.2, size: 1 }, { left: 99.4, top: 32.4, size: 1 }, { left: 80.3, top: 40.6, size: 1 },
-  { left: 6.8, top: 96.2, size: 1 }, { left: 9.8, top: 8.9, size: 2 },
+  { left: 14.3, top: 60.8, size: 2 }, { left: 51.4, top: 74.9, size: 1 }, { left: 95.7, top: 6.8, size: 2 },
+  { left: 68.8, top: 24.2, size: 1 }, { left: 91.6, top: 26.7, size: 2 }, { left: 33.6, top: 45.6, size: 1 },
+  { left: 39.2, top: 91.5, size: 2 }, { left: 84.2, top: 14.7, size: 1 }, { left: 29.6, top: 91.2, size: 2 },
+  { left: 87.7, top: 11.3, size: 2 }, { left: 65.3, top: 59.3, size: 1 }, { left: 76.8, top: 13.6, size: 2 },
+  { left: 73.1, top: 47.5, size: 1 }, { left: 43.0, top: 45.6, size: 2 }, { left: 55.4, top: 19.0, size: 1 },
 ]
 
 const FloatingStars = () => (
@@ -58,7 +47,7 @@ const FloatingStars = () => (
     {STAR_POSITIONS.map((star, i) => (
       <motion.div
         key={i}
-        className="absolute rounded-full bg-white"
+        className="absolute rounded-full bg-white/60"
         style={{
           left: `${star.left}%`,
           top: `${star.top}%`,
@@ -66,13 +55,12 @@ const FloatingStars = () => (
           height: `${star.size}px`,
         }}
         animate={{
-          opacity: [0.2, 0.8, 0.2],
-          scale: [1, 1.3, 1],
+          opacity: [0.1, 0.5, 0.1],
         }}
         transition={{
-          duration: 2 + (i % 5),
+          duration: 3 + (i % 3),
           repeat: Infinity,
-          delay: (i % 10) * 0.2,
+          delay: (i % 5) * 0.3,
         }}
       />
     ))}
@@ -174,24 +162,24 @@ const SKILL_PROMPTS: Record<string, { primary: string; followUp: string; example
 
 // Interaction zones for each area (x, y in percentages, with radius)
 const INTERACTION_ZONES = {
-  planning: { x: 85, y: 78, radius: 12, label: 'Teacher Desk' },
-  environment: { x: 50, y: 58, radius: 15, label: 'Class Community' },
-  instruction: { x: 50, y: 32, radius: 12, label: 'Teaching Space' },
-  assessment: { x: 15, y: 45, radius: 12, label: 'Student Work' },
+  planning: { x: 88, y: 62, radius: 12, label: 'Teacher Desk' },
+  environment: { x: 50, y: 57, radius: 18, label: 'Discussion Table' },
+  instruction: { x: 50, y: 28, radius: 14, label: 'Teaching Space' },
+  assessment: { x: 12, y: 42, radius: 12, label: 'Student Work' },
 }
 
-// Classroom areas based on Danielson Framework - with teacher-friendly names
+// Classroom areas based on Danielson Framework - with teacher-friendly names (Blair Academy colors)
 const CLASSROOM_AREAS = [
   {
     id: 'planning',
     name: 'Teacher Desk',
     subtitle: 'Planning & Preparation',
     icon: ClipboardList,
-    color: 'from-emerald-500 to-teal-600',
-    bgColor: 'bg-emerald-500',
-    borderColor: 'border-emerald-400',
-    glowColor: 'shadow-emerald-500/50',
-    textColor: 'text-emerald-400',
+    color: 'from-[#2d5a87] to-[#1e3a5f]',
+    bgColor: 'bg-[#2d5a87]',
+    borderColor: 'border-[#4a7ba8]',
+    glowColor: 'shadow-[#2d5a87]/50',
+    textColor: 'text-[#7db4e0]',
     description: 'Your home base. Where lessons come together and ideas take shape.',
     skills: [
       { id: 'objectives', name: 'Clear Learning Objectives', level: 2, unlocked: true },
@@ -205,14 +193,14 @@ const CLASSROOM_AREAS = [
   },
   {
     id: 'environment',
-    name: 'Class Community',
+    name: 'Discussion Table',
     subtitle: 'Classroom Environment',
     icon: Heart,
-    color: 'from-rose-500 to-pink-600',
-    bgColor: 'bg-rose-500',
-    borderColor: 'border-rose-400',
-    glowColor: 'shadow-rose-500/50',
-    textColor: 'text-rose-400',
+    color: 'from-[#1e3a5f] to-[#0f2744]',
+    bgColor: 'bg-[#1e3a5f]',
+    borderColor: 'border-[#3d5a7f]',
+    glowColor: 'shadow-[#1e3a5f]/50',
+    textColor: 'text-[#6ba3d6]',
     description: 'The heart of your classroom. Where belonging and safety live.',
     skills: [
       { id: 'relationships', name: 'Building Relationships', level: 3, unlocked: true },
@@ -229,11 +217,11 @@ const CLASSROOM_AREAS = [
     name: 'Teaching Space',
     subtitle: 'Instruction',
     icon: Presentation,
-    color: 'from-violet-500 to-purple-600',
-    bgColor: 'bg-violet-500',
-    borderColor: 'border-violet-400',
-    glowColor: 'shadow-violet-500/50',
-    textColor: 'text-violet-400',
+    color: 'from-[#4a7ba8] to-[#2d5a87]',
+    bgColor: 'bg-[#4a7ba8]',
+    borderColor: 'border-[#6ba3d6]',
+    glowColor: 'shadow-[#4a7ba8]/50',
+    textColor: 'text-[#a0c4e8]',
     description: 'Where the learning happens. Your stage for engaging minds.',
     skills: [
       { id: 'questioning', name: 'Questioning Strategies', level: 3, unlocked: true },
@@ -251,11 +239,11 @@ const CLASSROOM_AREAS = [
     name: 'Student Work',
     subtitle: 'Assessment & Feedback',
     icon: BarChart3,
-    color: 'from-amber-500 to-orange-600',
-    bgColor: 'bg-amber-500',
-    borderColor: 'border-amber-400',
-    glowColor: 'shadow-amber-500/50',
-    textColor: 'text-amber-400',
+    color: 'from-[#6b7280] to-[#4b5563]',
+    bgColor: 'bg-[#6b7280]',
+    borderColor: 'border-[#9ca3af]',
+    glowColor: 'shadow-[#6b7280]/50',
+    textColor: 'text-[#c0c0c0]',
     description: 'Celebrate progress and learn what students need next.',
     skills: [
       { id: 'formative', name: 'Formative Assessment', level: 2, unlocked: true },
@@ -306,6 +294,10 @@ export default function PlayPage() {
   const [earnedXp, setEarnedXp] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Goals state
+  const [activeGoals, setActiveGoals] = useState<Goal[]>([])
+  const [goalsExpanded, setGoalsExpanded] = useState(false)
+
   // Load profile and check for recent growth
   useEffect(() => {
     const saved = localStorage.getItem('teacher-profile')
@@ -327,6 +319,20 @@ export default function PlayPage() {
       localStorage.removeItem('recent-growth')
       setTimeout(() => setShowGrowthIndicators(false), 5000)
     }
+
+    // Fetch active goals
+    const fetchGoals = async () => {
+      try {
+        const response = await fetch(`/api/goals?userId=${DEMO_USER_ID}&status=ACTIVE`)
+        if (response.ok) {
+          const data = await response.json()
+          setActiveGoals(data.goals.slice(0, 3)) // Show top 3 goals
+        }
+      } catch (error) {
+        console.error('Failed to fetch goals:', error)
+      }
+    }
+    fetchGoals()
   }, [])
 
   // Check if character is near any interaction zone
@@ -498,22 +504,22 @@ export default function PlayPage() {
   const skillLogArea = skillLog ? CLASSROOM_AREAS.find(a => a.id === skillLog.areaId) : null
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white overflow-hidden">
       <FloatingStars />
 
-      {/* Header - Arcade Style */}
+      {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-30 p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 bg-slate-900/90 backdrop-blur-sm rounded-xl px-4 py-2 border-2 border-cyan-500/50 shadow-lg shadow-cyan-500/20">
+          <div className="flex items-center gap-3 bg-slate-900/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-700">
             <PixelCharacter
               customization={profile.character as CharacterCustomization}
               level={profile.level}
               size="sm"
             />
             <div>
-              <p className="font-black text-sm uppercase tracking-wide">{profile.name}</p>
-              <p className="text-xs text-yellow-400 flex items-center gap-1 font-bold">
-                <Zap className="w-3 h-3 fill-yellow-400" />
+              <p className="font-semibold text-sm">{profile.name}</p>
+              <p className="text-xs text-slate-400 flex items-center gap-1">
+                <Zap className="w-3 h-3 text-[#c0c0c0]" />
                 {totalXp} XP
               </p>
             </div>
@@ -521,19 +527,79 @@ export default function PlayPage() {
           <div className="flex gap-2">
             <button
               onClick={() => router.push('/play/quests')}
-              className="p-3 bg-slate-900/90 backdrop-blur-sm rounded-xl border-2 border-violet-500/50 text-violet-400 hover:text-white hover:border-violet-400 transition-all shadow-lg shadow-violet-500/20"
+              className="p-2 bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
             >
               <Scroll className="w-5 h-5" />
             </button>
             <button
               onClick={() => router.push('/play/settings')}
-              className="p-3 bg-slate-900/90 backdrop-blur-sm rounded-xl border-2 border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 transition-all"
+              className="p-2 bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 transition-colors"
             >
               <Settings className="w-5 h-5" />
             </button>
           </div>
         </div>
       </header>
+
+      {/* Active Goals - Collapsible */}
+      <div className="absolute top-20 left-4 z-20">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 overflow-hidden"
+        >
+          <button
+            onClick={() => setGoalsExpanded(!goalsExpanded)}
+            className="px-3 py-2 flex items-center gap-2 hover:bg-slate-800/50 transition-colors"
+          >
+            <Target className="w-4 h-4 text-[#7db4e0]" />
+            <span className="text-sm font-medium">Goals</span>
+            {activeGoals.length > 0 && (
+              <span className="text-xs bg-[#2d5a87]/50 text-[#7db4e0] px-1.5 py-0.5 rounded">
+                {activeGoals.length}
+              </span>
+            )}
+            <ChevronRight className={cn(
+              'w-3 h-3 text-slate-500 transition-transform ml-1',
+              goalsExpanded && 'rotate-90'
+            )} />
+          </button>
+
+          <AnimatePresence>
+            {goalsExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="px-3 pb-3 space-y-2 max-w-xs">
+                  {activeGoals.length === 0 ? (
+                    <button
+                      onClick={() => router.push('/play/goals')}
+                      className="text-xs text-[#7db4e0] hover:text-white transition-colors"
+                    >
+                      + Set a growth goal
+                    </button>
+                  ) : (
+                    <>
+                      {activeGoals.map(goal => (
+                        <GoalCard key={goal.id} goal={goal} variant="compact" />
+                      ))}
+                      <button
+                        onClick={() => router.push('/play/goals')}
+                        className="text-xs text-slate-500 hover:text-white transition-colors"
+                      >
+                        Manage goals
+                      </button>
+                    </>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
 
       {/* Space Station Classroom View */}
       <div className="relative w-full h-screen">
@@ -545,299 +611,244 @@ export default function PlayPage() {
           className="absolute inset-0 opacity-30"
           style={{
             backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(34, 211, 238, 0.15) 50px, rgba(34, 211, 238, 0.15) 51px),
-              repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(34, 211, 238, 0.15) 50px, rgba(34, 211, 238, 0.15) 51px)
+              repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(74, 123, 168, 0.15) 50px, rgba(74, 123, 168, 0.15) 51px),
+              repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(74, 123, 168, 0.15) 50px, rgba(74, 123, 168, 0.15) 51px)
             `,
           }}
         />
 
-        {/* Back Wall - Space Station Viewport */}
-        <div className="absolute top-0 left-0 right-0 h-[25%] bg-gradient-to-b from-indigo-900/50 to-slate-900 border-b-4 border-cyan-500/30" />
+        {/* Back Wall */}
+        <div className="absolute top-0 left-0 right-0 h-[20%] bg-gradient-to-b from-[#1e3a5f]/40 to-transparent border-b border-[#4a7ba8]/20" />
 
-        {/* Main Screen / Viewport */}
-        <div className="absolute top-[5%] left-1/2 -translate-x-1/2 w-[50%] h-[15%]">
-          <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg border-4 border-cyan-500/50 shadow-2xl shadow-cyan-500/20 flex items-center justify-center">
-            <span className="text-cyan-400 font-black uppercase tracking-widest text-sm" style={{ textShadow: '0 0 10px rgba(34, 211, 238, 0.5)' }}>Mission: Level Up</span>
-          </div>
-          <div className="absolute -bottom-2 left-[10%] right-[10%] h-3 bg-slate-700 rounded-b-lg border-x-2 border-b-2 border-cyan-500/30" />
-        </div>
+        {/* Floor grid pattern */}
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `
+              repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(74, 123, 168, 0.1) 40px, rgba(74, 123, 168, 0.1) 41px),
+              repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(74, 123, 168, 0.1) 40px, rgba(74, 123, 168, 0.1) 41px)
+            `,
+          }}
+        />
 
-        {/* Space Station Panels / Posters */}
-        <div className="absolute top-[6%] left-[5%] w-16 h-20 bg-slate-800 rounded-lg shadow-lg border-2 border-cyan-500/50 flex flex-col items-center justify-center p-2 shadow-cyan-500/20">
-          <Rocket className="w-5 h-5 text-cyan-400 mb-1" />
-          <span className="text-[7px] text-cyan-400 font-bold text-center uppercase tracking-wide">Level Up!</span>
+        {/* Classroom Posters - Front Wall */}
+        <div className="absolute top-[4%] left-[8%] w-14 h-18 bg-[#2d5a87] rounded-lg shadow-lg border-2 border-[#4a7ba8] flex flex-col items-center justify-center p-2">
+          <Rocket className="w-5 h-5 text-[#7db4e0] mb-1" />
+          <span className="text-[6px] text-[#7db4e0] font-bold text-center uppercase leading-tight">Aim High</span>
         </div>
-        <div className="absolute top-[8%] right-[8%] w-20 h-16 bg-slate-800 rounded-lg shadow-lg border-2 border-violet-500/50 flex flex-col items-center justify-center p-2 shadow-violet-500/20">
-          <Star className="w-5 h-5 text-violet-400 mb-1" />
-          <span className="text-[7px] text-violet-400 font-bold text-center uppercase tracking-wide">Learn More</span>
+        <div className="absolute top-[6%] right-[10%] w-16 h-14 bg-slate-800 rounded-lg shadow-lg border-2 border-[#6b7280] flex flex-col items-center justify-center p-2">
+          <Star className="w-5 h-5 text-[#c0c0c0] mb-1" />
+          <span className="text-[6px] text-[#c0c0c0] font-bold text-center uppercase leading-tight">Keep Growing</span>
         </div>
 
         {/* Clock */}
-        <div className="absolute top-[4%] right-[20%] w-10 h-10 bg-slate-100 rounded-full border-4 border-amber-700 shadow-lg flex items-center justify-center">
-          <div className="w-0.5 h-3 bg-slate-800 absolute origin-bottom rotate-45" style={{ bottom: '50%' }} />
-          <div className="w-0.5 h-2 bg-slate-800 absolute origin-bottom -rotate-12" style={{ bottom: '50%' }} />
+        <div className="absolute top-[5%] right-[22%] w-8 h-8 bg-slate-100 rounded-full border-3 border-amber-700 shadow-md flex items-center justify-center">
+          <div className="w-0.5 h-2.5 bg-slate-800 absolute origin-bottom rotate-45" style={{ bottom: '50%' }} />
+          <div className="w-0.5 h-1.5 bg-slate-800 absolute origin-bottom -rotate-12" style={{ bottom: '50%' }} />
         </div>
 
-        {/* Student Work Wall - LEFT SIDE (was assessment/data wall) */}
+        {/* Window */}
+        <div className="absolute top-[4%] left-[22%] w-10 h-16 bg-sky-200 rounded border-3 border-slate-500 shadow-inner">
+          <div className="absolute inset-0 bg-gradient-to-b from-yellow-100/30 to-transparent" />
+          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-400" />
+          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-slate-400" />
+        </div>
+
+        {/* Bookshelf */}
+        <div className="absolute top-[32%] right-[4%] w-8 h-20 bg-amber-800 rounded border-2 border-amber-900 shadow-md">
+          <div className="h-1/3 border-b border-amber-900 flex items-center justify-center gap-0.5 px-1">
+            <div className="w-2 h-4 bg-blue-800 rounded-sm" />
+            <div className="w-2 h-3 bg-red-800 rounded-sm" />
+          </div>
+          <div className="h-1/3 border-b border-amber-900 flex items-center justify-center gap-0.5 px-1">
+            <div className="w-3 h-3 bg-emerald-800 rounded-sm" />
+            <div className="w-2 h-4 bg-purple-800 rounded-sm" />
+          </div>
+          <div className="h-1/3 flex items-center justify-center">
+            <div className="w-4 h-3 bg-amber-600 rounded-sm" />
+          </div>
+        </div>
+
+        {/* Plant */}
+        <div className="absolute top-[55%] right-[4%]">
+          <div className="w-6 h-4 bg-amber-600 rounded-t border border-amber-700" />
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <div className="w-2 h-4 bg-emerald-500 rounded-full transform -rotate-12" />
+            <div className="w-2 h-4 bg-emerald-600 rounded-full transform rotate-12 -mt-2 ml-1" />
+          </div>
+        </div>
+
+        {/* Student Work Wall - Bulletin Board */}
         <div className={cn(
-          'absolute top-[30%] left-[3%] transition-all duration-300',
-          nearbyArea === 'assessment' && 'scale-105',
-          showGrowthIndicators && recentGrowth['assessment'] && 'animate-pulse'
+          'absolute top-[35%] left-[5%] transition-all duration-300',
+          nearbyArea === 'assessment' && 'scale-105'
         )}>
           {showGrowthIndicators && recentGrowth['assessment'] && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-16 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 rounded-full text-sm font-bold whitespace-nowrap z-10 shadow-lg shadow-amber-500/50"
+              className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#6b7280] rounded-full text-sm font-bold whitespace-nowrap z-10"
             >
               +{recentGrowth['assessment']} XP
             </motion.div>
           )}
-          {/* Bulletin board with student work */}
+          {/* Bulletin board */}
           <div className={cn(
-            'w-28 h-36 bg-amber-100 rounded-lg border-8 shadow-xl relative transition-all',
-            nearbyArea === 'assessment' ? 'border-amber-500 shadow-2xl shadow-amber-500/40' : 'border-amber-700'
+            'w-24 h-28 bg-amber-100 rounded-lg border-4 shadow-lg relative transition-all',
+            nearbyArea === 'assessment' ? 'border-[#9ca3af] shadow-xl' : 'border-amber-700'
           )}>
-            {/* Student papers pinned to board */}
-            <div className="absolute top-2 left-2 w-10 h-12 bg-white rounded-sm shadow transform -rotate-3 border border-slate-200">
-              <div className="p-1">
-                <div className="w-6 h-1 bg-slate-300 rounded mb-1" />
-                <div className="w-8 h-1 bg-slate-200 rounded mb-1" />
-                <div className="w-5 h-1 bg-slate-200 rounded" />
-              </div>
-              <div className="absolute -top-1 left-1/2 w-2 h-2 bg-red-500 rounded-full" />
-            </div>
-            <div className="absolute top-3 right-2 w-10 h-10 bg-yellow-100 rounded-sm shadow transform rotate-2 border border-yellow-200">
-              <div className="w-4 h-4 bg-blue-300/50 rounded m-1" />
-              <div className="absolute -top-1 left-1/2 w-2 h-2 bg-blue-500 rounded-full" />
-            </div>
-            <div className="absolute bottom-3 left-3 w-12 h-10 bg-white rounded-sm shadow transform rotate-1 border border-slate-200">
-              <div className="p-1">
-                <div className="w-8 h-1 bg-emerald-300 rounded mb-1" />
-                <div className="w-6 h-1 bg-emerald-200 rounded" />
-              </div>
-              <div className="absolute -top-1 right-2 w-2 h-2 bg-emerald-500 rounded-full" />
-            </div>
-            <div className="absolute bottom-2 right-2 w-8 h-8 bg-pink-100 rounded-sm shadow transform -rotate-2 border border-pink-200">
-              <div className="absolute -top-1 left-1/2 w-2 h-2 bg-pink-500 rounded-full" />
-            </div>
-            {/* Gold star sticker */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-400" />
-            </div>
+            {/* Pinned papers */}
+            <div className="absolute top-2 left-2 w-8 h-10 bg-white rounded-sm shadow-sm transform -rotate-2" />
+            <div className="absolute top-3 right-2 w-8 h-8 bg-yellow-200 rounded-sm shadow-sm transform rotate-3" />
+            <div className="absolute bottom-3 left-3 w-9 h-8 bg-white rounded-sm shadow-sm transform rotate-1" />
+            <div className="absolute bottom-2 right-3 w-7 h-7 bg-blue-100 rounded-sm shadow-sm transform -rotate-2" />
+            {/* Star sticker */}
+            <Star className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-yellow-500 fill-yellow-400" />
           </div>
+          {/* Label */}
           <div className={cn(
-            'absolute -bottom-10 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl transition-all whitespace-nowrap',
-            'bg-slate-900/90 backdrop-blur-sm border-2',
-            nearbyArea === 'assessment' ? 'scale-110 shadow-lg shadow-amber-500/50 border-amber-400' : 'opacity-90 border-amber-500/50'
+            'absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
+            'bg-slate-900/80 backdrop-blur-sm',
+            nearbyArea === 'assessment' && 'scale-105'
           )}>
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 text-amber-400" />
-              <span className="font-bold text-sm text-amber-400">Student Work</span>
-            </div>
-            <div className="text-xs text-amber-400/70">Level {CLASSROOM_AREAS[3].level}</div>
+            <span className="text-xs font-medium text-[#c0c0c0]">Student Work</span>
           </div>
         </div>
 
-        {/* Student Desks - Class Community (center) */}
+        {/* Discussion Table - Class Community */}
         <div className={cn(
-          'absolute top-[45%] left-1/2 -translate-x-1/2 transition-all duration-300',
-          nearbyArea === 'environment' && 'scale-105',
-          showGrowthIndicators && recentGrowth['environment'] && 'animate-pulse'
+          'absolute top-[50%] left-1/2 -translate-x-1/2 transition-all duration-300',
+          nearbyArea === 'environment' && 'scale-105'
         )}>
           {showGrowthIndicators && recentGrowth['environment'] && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-16 left-1/2 -translate-x-1/2 px-3 py-1 bg-rose-500 rounded-full text-sm font-bold whitespace-nowrap z-10 shadow-lg shadow-rose-500/50"
+              className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#1e3a5f] rounded-full text-sm font-bold whitespace-nowrap z-10"
             >
               +{recentGrowth['environment']} XP
             </motion.div>
           )}
-          {/* Classroom rug underneath desks */}
-          <div className="absolute -inset-4 bg-gradient-to-br from-rose-200/30 to-rose-300/30 rounded-2xl -z-10" />
-          <div className={cn('relative transition-all', nearbyArea === 'environment' && 'drop-shadow-[0_0_15px_rgba(244,63,94,0.3)]')}>
-            <div className="flex gap-4 mb-4">
-              {[0,1,2].map(i => (
-                <div key={i} className={cn('w-14 h-10 bg-amber-600 rounded border-2 shadow-lg transition-all', nearbyArea === 'environment' ? 'border-rose-400' : 'border-amber-800')}>
-                  <div className="w-full h-1 bg-amber-500 rounded-t" />
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-4 mb-4">
-              {[0,1,2].map(i => (
-                <div key={i} className={cn('w-14 h-10 bg-amber-600 rounded border-2 shadow-lg transition-all', nearbyArea === 'environment' ? 'border-rose-400' : 'border-amber-800')}>
-                  <div className="w-full h-1 bg-amber-500 rounded-t" />
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-4">
-              {[0,1,2].map(i => (
-                <div key={i} className={cn('w-14 h-10 bg-amber-600 rounded border-2 shadow-lg transition-all', nearbyArea === 'environment' ? 'border-rose-400' : 'border-amber-800')}>
-                  <div className="w-full h-1 bg-amber-500 rounded-t" />
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Rug under table */}
+          <div className="absolute -inset-6 bg-[#1e3a5f]/10 rounded-full -z-10" />
+          {/* Oval discussion table */}
           <div className={cn(
-            'absolute -top-8 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl transition-all whitespace-nowrap',
-            'bg-slate-900/90 backdrop-blur-sm border-2',
-            nearbyArea === 'environment' ? 'scale-110 shadow-lg shadow-rose-500/50 border-rose-400' : 'opacity-90 border-rose-500/50'
+            'w-36 h-24 rounded-[50%] bg-amber-700 border-4 shadow-lg transition-all relative',
+            nearbyArea === 'environment' ? 'border-[#4a7ba8] shadow-xl' : 'border-amber-900'
           )}>
-            <div className="flex items-center gap-2">
-              <Heart className="w-4 h-4 text-rose-400" />
-              <span className="font-bold text-sm text-rose-400">Community</span>
-            </div>
-            <div className="text-xs text-rose-400/70">Level {CLASSROOM_AREAS[1].level}</div>
+            {/* Wood grain detail */}
+            <div className="absolute inset-2 rounded-[50%] border border-amber-600/30" />
+            {/* Chairs around the table */}
+            {/* Top chairs */}
+            <div className="absolute -top-2 left-1/4 w-4 h-3 bg-slate-600 rounded-t border border-slate-700" />
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-3 bg-slate-600 rounded-t border border-slate-700" />
+            <div className="absolute -top-2 right-1/4 w-4 h-3 bg-slate-600 rounded-t border border-slate-700" />
+            {/* Bottom chairs */}
+            <div className="absolute -bottom-2 left-1/4 w-4 h-3 bg-slate-600 rounded-b border border-slate-700" />
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-3 bg-slate-600 rounded-b border border-slate-700" />
+            <div className="absolute -bottom-2 right-1/4 w-4 h-3 bg-slate-600 rounded-b border border-slate-700" />
+            {/* Side chairs */}
+            <div className="absolute top-1/3 -left-2 w-3 h-4 bg-slate-600 rounded-l border border-slate-700" />
+            <div className="absolute top-1/2 -left-2 w-3 h-4 bg-slate-600 rounded-l border border-slate-700" />
+            <div className="absolute top-1/3 -right-2 w-3 h-4 bg-slate-600 rounded-r border border-slate-700" />
+            <div className="absolute top-1/2 -right-2 w-3 h-4 bg-slate-600 rounded-r border border-slate-700" />
+          </div>
+          {/* Label */}
+          <div className={cn(
+            'absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
+            'bg-slate-900/80 backdrop-blur-sm',
+            nearbyArea === 'environment' && 'scale-105'
+          )}>
+            <span className="text-xs font-medium text-[#6ba3d6]">Discussion Table</span>
           </div>
         </div>
 
-        {/* Teaching Space - Whiteboard/Front of room */}
+        {/* Teaching Space - Whiteboard (on wall) */}
         <div className={cn(
-          'absolute top-[22%] left-1/2 -translate-x-1/2 transition-all duration-300',
-          nearbyArea === 'instruction' && 'scale-105',
-          showGrowthIndicators && recentGrowth['instruction'] && 'animate-pulse'
+          'absolute top-[4%] left-1/2 -translate-x-1/2 transition-all duration-300',
+          nearbyArea === 'instruction' && 'scale-105'
         )}>
           {showGrowthIndicators && recentGrowth['instruction'] && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-16 left-1/2 -translate-x-1/2 px-3 py-1 bg-violet-500 rounded-full text-sm font-bold whitespace-nowrap z-10 shadow-lg shadow-violet-500/50"
+              className="absolute -top-6 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#4a7ba8] rounded-full text-sm font-bold whitespace-nowrap z-10"
             >
               +{recentGrowth['instruction']} XP
             </motion.div>
           )}
           {/* Whiteboard */}
           <div className={cn(
-            'w-48 h-24 bg-slate-100 rounded-lg border-8 shadow-xl relative transition-all',
-            nearbyArea === 'instruction' ? 'border-violet-500 shadow-2xl shadow-violet-500/30' : 'border-slate-400'
+            'w-56 h-28 bg-slate-100 rounded-lg border-6 shadow-xl relative transition-all',
+            nearbyArea === 'instruction' ? 'border-[#6ba3d6] shadow-2xl' : 'border-slate-400'
           )}>
-            {/* Whiteboard content */}
-            <div className="p-2">
-              <div className="w-20 h-2 bg-blue-400/40 rounded mb-2" />
-              <div className="w-32 h-1 bg-slate-300 rounded mb-1" />
-              <div className="w-28 h-1 bg-slate-300 rounded mb-1" />
-              <div className="w-24 h-1 bg-slate-300 rounded" />
+            {/* Writing on board */}
+            <div className="p-3">
+              <div className="w-24 h-2 bg-blue-400/50 rounded mb-2" />
+              <div className="w-36 h-1.5 bg-slate-300 rounded mb-1.5" />
+              <div className="w-32 h-1.5 bg-slate-300 rounded mb-1.5" />
+              <div className="w-28 h-1.5 bg-slate-300 rounded" />
             </div>
             {/* Marker tray */}
-            <div className="absolute -bottom-2 left-1/4 right-1/4 h-3 bg-slate-300 rounded-b flex items-center justify-center gap-1 px-2">
+            <div className="absolute -bottom-2 left-1/4 right-1/4 h-3 bg-slate-300 rounded-b flex items-center justify-center gap-2">
               <div className="w-6 h-2 bg-blue-600 rounded-full" />
               <div className="w-6 h-2 bg-red-600 rounded-full" />
-              <div className="w-6 h-2 bg-emerald-600 rounded-full" />
+              <div className="w-6 h-2 bg-green-600 rounded-full" />
             </div>
           </div>
+          {/* Label */}
           <div className={cn(
-            'absolute -bottom-14 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl transition-all whitespace-nowrap',
-            'bg-slate-900/90 backdrop-blur-sm border-2',
-            nearbyArea === 'instruction' ? 'scale-110 shadow-lg shadow-violet-500/50 border-violet-400' : 'opacity-90 border-violet-500/50'
+            'absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
+            'bg-slate-900/80 backdrop-blur-sm',
+            nearbyArea === 'instruction' && 'scale-105'
           )}>
-            <div className="flex items-center gap-2">
-              <Presentation className="w-4 h-4 text-violet-400" />
-              <span className="font-bold text-sm text-violet-400">Teaching Space</span>
-            </div>
-            <div className="text-xs text-violet-400/70">Level {CLASSROOM_AREAS[2].level}</div>
+            <span className="text-xs font-medium text-[#a0c4e8]">Teaching Space</span>
           </div>
         </div>
 
-        {/* Teacher's Desk - RIGHT SIDE (was planning) */}
+        {/* Teacher's Desk - Planning */}
         <div className={cn(
-          'absolute bottom-[18%] right-[8%] transition-all duration-300',
-          nearbyArea === 'planning' && 'scale-105',
-          showGrowthIndicators && recentGrowth['planning'] && 'animate-pulse'
+          'absolute top-[55%] right-[8%] transition-all duration-300',
+          nearbyArea === 'planning' && 'scale-105'
         )}>
           {showGrowthIndicators && recentGrowth['planning'] && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-20 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500 rounded-full text-sm font-bold whitespace-nowrap z-10 shadow-lg shadow-emerald-500/50"
+              className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#2d5a87] rounded-full text-sm font-bold whitespace-nowrap z-10"
             >
               +{recentGrowth['planning']} XP
             </motion.div>
           )}
-          {/* Cozy teacher desk */}
+          {/* Teacher desk */}
           <div className={cn(
-            'w-36 h-24 bg-amber-700 rounded-lg border-4 shadow-xl relative transition-all',
-            nearbyArea === 'planning' ? 'border-emerald-400 shadow-2xl shadow-emerald-500/40' : 'border-amber-900'
+            'w-28 h-18 bg-amber-700 rounded-lg border-2 shadow-lg relative transition-all',
+            nearbyArea === 'planning' ? 'border-[#4a7ba8] shadow-xl' : 'border-amber-900'
           )}>
             {/* Laptop */}
-            <div className="absolute top-2 left-2 w-14 h-10 bg-slate-700 rounded-t-lg border-2 border-slate-600">
-              <div className="w-full h-7 bg-slate-800 rounded-t flex items-center justify-center">
-                <div className="w-8 h-4 bg-blue-400/30 rounded" />
+            <div className="absolute top-1.5 left-2 w-10 h-7 bg-slate-700 rounded-t border border-slate-600">
+              <div className="w-full h-5 bg-slate-800 rounded-t flex items-center justify-center">
+                <div className="w-6 h-3 bg-blue-400/30 rounded" />
               </div>
             </div>
             {/* Coffee mug */}
-            <div className="absolute top-3 right-3 w-5 h-6 bg-rose-400 rounded-b-lg border-2 border-rose-500">
-              <div className="absolute -right-2 top-1 w-2 h-3 border-2 border-rose-500 rounded-r-full bg-transparent" />
-            </div>
+            <div className="absolute top-2 right-2 w-4 h-5 bg-rose-400 rounded-b border border-rose-500" />
             {/* Papers */}
-            <div className="absolute bottom-2 left-4 w-10 h-8 bg-white rounded-sm shadow transform -rotate-3 border border-slate-200" />
-            <div className="absolute bottom-3 left-6 w-10 h-8 bg-yellow-100 rounded-sm shadow transform rotate-2" />
-            {/* Pencil cup */}
-            <div className="absolute bottom-2 right-6 w-4 h-6 bg-slate-500 rounded-t-sm">
-              <div className="absolute -top-3 left-0 w-1 h-4 bg-yellow-400 transform -rotate-12" />
-              <div className="absolute -top-2 left-1 w-1 h-3 bg-blue-400 transform rotate-6" />
-            </div>
+            <div className="absolute bottom-1.5 left-3 w-8 h-5 bg-white rounded-sm shadow-sm" />
+            <div className="absolute bottom-2 left-4 w-8 h-5 bg-yellow-100 rounded-sm shadow-sm" />
           </div>
-          {/* Teacher chair */}
-          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-12 h-8 bg-slate-600 rounded-t-lg border-2 border-slate-700" />
+          {/* Chair */}
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-5 bg-slate-600 rounded-t border border-slate-700" />
+          {/* Label */}
           <div className={cn(
-            'absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-2 rounded-xl transition-all whitespace-nowrap',
-            'bg-slate-900/90 backdrop-blur-sm border-2',
-            nearbyArea === 'planning' ? 'scale-110 shadow-lg shadow-emerald-500/50 border-emerald-400' : 'opacity-90 border-emerald-500/50'
+            'absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
+            'bg-slate-900/80 backdrop-blur-sm',
+            nearbyArea === 'planning' && 'scale-105'
           )}>
-            <div className="flex items-center gap-2">
-              <ClipboardList className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-sm text-emerald-400">Teacher Desk</span>
-            </div>
-            <div className="text-xs text-emerald-400/70">Level {CLASSROOM_AREAS[0].level}</div>
+            <span className="text-xs font-medium text-[#7db4e0]">Teacher Desk</span>
           </div>
         </div>
 
-        {/* Bookshelf - cozy corner */}
-        <div className="absolute top-[30%] right-[3%] w-10 h-28 bg-amber-800 rounded border-4 border-amber-900 shadow-lg">
-          <div className="h-1/4 border-b border-amber-900 flex items-center justify-center px-1">
-            <div className="w-3 h-5 bg-blue-800 rounded-sm" />
-            <div className="w-2 h-4 bg-red-800 rounded-sm" />
-          </div>
-          <div className="h-1/4 border-b border-amber-900 flex items-center justify-center px-1">
-            <div className="w-4 h-4 bg-emerald-800 rounded-sm" />
-            <div className="w-3 h-5 bg-purple-800 rounded-sm" />
-          </div>
-          <div className="h-1/4 border-b border-amber-900 flex items-center justify-center">
-            <div className="w-6 h-4 bg-amber-600 rounded-sm" />
-          </div>
-          <div className="h-1/4 flex items-center justify-center">
-            <div className="w-5 h-3 bg-slate-600 rounded-sm" />
-          </div>
-        </div>
-
-        {/* Plant - homey touch */}
-        <div className="absolute bottom-[35%] right-[3%]">
-          <div className="w-8 h-6 bg-amber-600 rounded-t-lg border-2 border-amber-700" />
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-            <div className="w-3 h-5 bg-emerald-500 rounded-full transform -rotate-12" />
-            <div className="w-3 h-5 bg-emerald-600 rounded-full transform rotate-12 -mt-3 ml-2" />
-            <div className="w-3 h-6 bg-emerald-500 rounded-full -mt-4" />
-          </div>
-        </div>
-
-        {/* Reading Corner Rug */}
-        <div className="absolute bottom-[25%] left-[3%] w-16 h-16 bg-gradient-to-br from-blue-300/40 to-purple-300/40 rounded-full" />
-
-        {/* Bean bag in reading corner */}
-        <div className="absolute bottom-[28%] left-[5%] w-10 h-8 bg-purple-400 rounded-full border-2 border-purple-500 shadow-lg" />
-
-        {/* Classroom Door */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-10 bg-amber-700 rounded-t-lg border-t-4 border-x-4 border-amber-800 flex items-center justify-center">
-          <div className="w-3 h-3 bg-yellow-500 rounded-full mr-4" />
-        </div>
-
-        {/* Windows with sunlight */}
-        <div className="absolute top-[6%] left-[15%] w-12 h-20 bg-sky-200 rounded border-4 border-slate-500 shadow-inner">
-          <div className="absolute inset-0 bg-gradient-to-b from-yellow-100/30 to-transparent" />
-          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-400" />
-          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-slate-400" />
-        </div>
 
         {/* Player Character */}
         <motion.div
@@ -865,57 +876,48 @@ export default function PlayPage() {
           )}
         </AnimatePresence>
 
-        {/* Controls hint */}
-        <div className="absolute bottom-20 left-4 bg-slate-900/95 backdrop-blur-sm rounded-xl p-3 border-2 border-cyan-500/30 shadow-lg shadow-cyan-500/10">
-          <p className="text-xs text-cyan-400 mb-2 font-bold uppercase tracking-wide">Controls</p>
-          <div className="flex flex-col items-center gap-1 text-xs">
-            <kbd className="w-6 h-6 bg-slate-800 rounded border border-cyan-500/30 flex items-center justify-center text-cyan-400"><ArrowUp className="w-3 h-3" /></kbd>
-            <div className="flex items-center gap-1">
-              <kbd className="w-6 h-6 bg-slate-800 rounded border border-cyan-500/30 flex items-center justify-center text-cyan-400"><ArrowLeft className="w-3 h-3" /></kbd>
-              <kbd className="w-6 h-6 bg-slate-800 rounded border border-cyan-500/30 flex items-center justify-center text-cyan-400"><ArrowDown className="w-3 h-3" /></kbd>
-              <kbd className="w-6 h-6 bg-slate-800 rounded border border-cyan-500/30 flex items-center justify-center text-cyan-400"><ArrowRight className="w-3 h-3" /></kbd>
-            </div>
-            <p className="text-cyan-400/50 mt-1 text-[10px]">or WASD</p>
-          </div>
+        {/* Controls hint - minimal */}
+        <div className="absolute bottom-20 left-4 text-[10px] text-slate-500">
+          <span>Use arrow keys or WASD to move</span>
         </div>
       </div>
 
-      {/* Bottom Nav - Arcade Style */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-lg border-t-2 border-cyan-500/30 z-30">
+      {/* Bottom Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-lg border-t border-slate-800 z-30">
         <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-around py-3">
-            <button className="flex flex-col items-center gap-1 text-cyan-400">
-              <Rocket className="w-6 h-6" />
-              <span className="text-xs font-bold">Base</span>
+          <div className="flex items-center justify-around py-2">
+            <button className="flex flex-col items-center gap-0.5 text-white">
+              <Rocket className="w-5 h-5" />
+              <span className="text-[10px] font-medium">Base</span>
             </button>
-            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-violet-400 transition-colors">
-              <BookOpen className="w-6 h-6" />
-              <span className="text-xs">Log</span>
+            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
+              <BookOpen className="w-5 h-5" />
+              <span className="text-[10px]">Log</span>
             </button>
-            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-amber-400 transition-colors">
-              <Sparkles className="w-6 h-6" />
-              <span className="text-xs">Journal</span>
+            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
+              <Sparkles className="w-5 h-5" />
+              <span className="text-[10px]">Journal</span>
             </button>
-            <button onClick={() => router.push('/play/progress')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-cyan-400 transition-colors">
-              <BarChart3 className="w-6 h-6" />
-              <span className="text-xs">Progress</span>
+            <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
+              <Target className="w-5 h-5" />
+              <span className="text-[10px]">Goals</span>
             </button>
-            <button onClick={() => router.push('/play/profile')} className="flex flex-col items-center gap-1 text-slate-500 hover:text-emerald-400 transition-colors">
-              <Award className="w-6 h-6" />
-              <span className="text-xs">Rank</span>
+            <button onClick={() => router.push('/play/progress')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-[10px]">Progress</span>
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Area Detail Modal - Space Station Terminal */}
+      {/* Area Detail Modal */}
       <AnimatePresence>
         {area && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-end justify-center"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end justify-center"
             onClick={() => setSelectedArea(null)}
           >
             <motion.div
@@ -924,95 +926,85 @@ export default function PlayPage() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-slate-900 rounded-t-3xl max-h-[80vh] overflow-auto border-t-2 border-x-2 border-cyan-500/30"
+              className="w-full max-w-lg bg-slate-900 rounded-t-2xl max-h-[75vh] overflow-auto"
             >
               <div className="sticky top-0 bg-slate-900 pt-3 pb-2 flex justify-center">
-                <div className="w-10 h-1 bg-cyan-500/50 rounded-full" />
+                <div className="w-10 h-1 bg-slate-700 rounded-full" />
               </div>
 
-              <div className="px-6 pb-6">
+              <div className="px-5 pb-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={cn('w-14 h-14 rounded-xl bg-slate-800 border-2 flex items-center justify-center', area.borderColor)}>
-                      <area.icon className={cn('w-7 h-7', area.textColor)} />
+                    <div className={cn('w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center', area.borderColor)}>
+                      <area.icon className={cn('w-6 h-6', area.textColor)} />
                     </div>
                     <div>
-                      <h2 className={cn('text-xl font-black uppercase tracking-wide', area.textColor)} style={{ textShadow: `0 0 20px currentColor` }}>{area.name}</h2>
-                      <p className="text-sm text-slate-400">{area.subtitle}</p>
+                      <h2 className="text-lg font-bold">{area.name}</h2>
+                      <p className="text-sm text-slate-500">{area.subtitle}</p>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedArea(null)} className="p-2 text-slate-400 hover:text-white border border-slate-700 rounded-lg hover:border-slate-500 transition-colors">
+                  <button onClick={() => setSelectedArea(null)} className="p-2 text-slate-500 hover:text-white transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <p className="text-slate-400 mb-4">{area.description}</p>
+                <p className="text-slate-400 text-sm mb-4">{area.description}</p>
 
-                <div className="bg-slate-800/50 rounded-xl p-4 mb-6 border border-slate-700">
+                <div className="bg-slate-800/50 rounded-lg p-3 mb-5">
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-slate-400 font-medium">Level {area.level} Progress</span>
-                    <span className="text-yellow-400 flex items-center gap-1 font-bold">
-                      <Zap className="w-4 h-4 fill-yellow-400" />
-                      {area.xp}/{area.xpToNext}
-                    </span>
+                    <span className="text-slate-500">Level {area.level}</span>
+                    <span className="text-slate-400">{area.xp}/{area.xpToNext} XP</span>
                   </div>
-                  <div className="h-3 bg-slate-700 rounded-full overflow-hidden border border-slate-600">
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${(area.xp / area.xpToNext) * 100}%` }}
                       className={cn('h-full rounded-full', area.bgColor)}
-                      style={{ boxShadow: `0 0 10px currentColor` }}
                     />
                   </div>
                 </div>
 
-                <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-widest mb-3">
-                  Available Subsystems
+                <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">
+                  Skills
                 </h3>
                 <div className="space-y-2">
                   {area.skills.map((skill, i) => (
                     <motion.div
                       key={skill.id}
-                      initial={{ opacity: 0, x: -20 }}
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
+                      transition={{ delay: i * 0.05 }}
                       className={cn(
-                        'p-4 rounded-xl border-2 flex items-center gap-3',
-                        skill.unlocked ? `bg-slate-800/50 ${area.borderColor}/30 hover:${area.borderColor}/50` : 'bg-slate-900/50 border-slate-800 opacity-60'
+                        'p-3 rounded-lg border flex items-center gap-3',
+                        skill.unlocked ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-900/50 border-slate-800 opacity-50'
                       )}
                     >
                       {skill.unlocked ? (
-                        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center border-2', area.borderColor, 'bg-slate-900')}>
-                          <span className={cn('text-sm font-bold', area.textColor)}>{skill.level}</span>
+                        <div className="w-8 h-8 rounded bg-slate-700 flex items-center justify-center">
+                          <span className={cn('text-sm font-medium', area.textColor)}>{skill.level}</span>
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
-                          <Lock className="w-4 h-4 text-slate-500" />
+                        <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-slate-600" />
                         </div>
                       )}
-                      <div className="flex-1">
-                        <p className="font-medium">{skill.name}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{skill.name}</p>
                         {skill.unlocked && (
-                          <div className="flex items-center gap-1 mt-1">
+                          <div className="flex items-center gap-0.5 mt-1">
                             {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={cn('w-3 h-3', i < skill.level ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600')} />
+                              <Star key={i} className={cn('w-2.5 h-2.5', i < skill.level ? 'text-yellow-400 fill-yellow-400' : 'text-slate-700')} />
                             ))}
                           </div>
                         )}
                       </div>
-                      {skill.unlocked ? (
+                      {skill.unlocked && (
                         <button
                           onClick={() => startSkillLog(skill.id, skill.name, area.id)}
-                          className={cn(
-                            'px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-1 transition-all border-2',
-                            area.borderColor, 'hover:bg-slate-700 text-white'
-                          )}
+                          className="px-3 py-1.5 rounded text-xs font-medium bg-slate-700 hover:bg-slate-600 transition-colors"
                         >
-                          <Plus className="w-4 h-4" />
                           Log
                         </button>
-                      ) : (
-                        <Lock className="w-5 h-5 text-slate-600" />
                       )}
                     </motion.div>
                   ))}
@@ -1023,107 +1015,94 @@ export default function PlayPage() {
         )}
       </AnimatePresence>
 
-      {/* Skill Logging Modal - Mission Log Terminal */}
+      {/* Skill Logging Modal */}
       <AnimatePresence>
         {skillLog && skillPrompts && skillLogArea && !showCompletion && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="w-full max-w-lg bg-slate-900 rounded-2xl overflow-hidden border-2 border-cyan-500/30"
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-md bg-slate-900 rounded-xl overflow-hidden"
             >
               {/* Header */}
-              <div className={cn('p-4 bg-slate-800 border-b-2', skillLogArea.borderColor)}>
+              <div className="p-4 border-b border-slate-800">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={cn('w-10 h-10 rounded-lg border-2 flex items-center justify-center bg-slate-900', skillLogArea.borderColor)}>
-                      <skillLogArea.icon className={cn('w-5 h-5', skillLogArea.textColor)} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-cyan-400 uppercase tracking-widest font-bold">Mission Log</p>
-                      <h2 className="font-bold text-white">{skillLog.skillName}</h2>
-                    </div>
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">Log reflection</p>
+                    <h2 className="font-semibold">{skillLog.skillName}</h2>
                   </div>
-                  <button onClick={() => setSkillLog(null)} className="p-2 hover:bg-slate-700 rounded-lg transition-colors border border-slate-600">
-                    <X className="w-5 h-5 text-slate-400" />
+                  <button onClick={() => setSkillLog(null)} className="p-2 text-slate-500 hover:text-white transition-colors">
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
-                {/* Progress dots */}
-                <div className="flex items-center justify-center gap-2 mt-4">
+                {/* Progress */}
+                <div className="flex items-center gap-1 mt-3">
                   {[0, 1, 2].map(i => (
-                    <div key={i} className={cn('w-3 h-3 rounded-full transition-colors border-2', skillLog.step >= i ? `${skillLogArea.bgColor} ${skillLogArea.borderColor}` : 'border-slate-600 bg-slate-800')} />
+                    <div key={i} className={cn('h-1 flex-1 rounded-full transition-colors', skillLog.step >= i ? 'bg-[#4a7ba8]' : 'bg-slate-700')} />
                   ))}
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-6">
+              <div className="p-4">
                 <AnimatePresence mode="wait">
-                  {/* Step 0: Primary Question */}
                   {skillLog.step === 0 && (
-                    <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <h3 className="text-lg font-bold mb-2 text-white">{skillPrompts.primary}</h3>
-                      <div className="flex flex-wrap gap-2 mb-4">
+                    <motion.div key="step0" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                      <h3 className="font-medium mb-3">{skillPrompts.primary}</h3>
+                      <div className="flex flex-wrap gap-1.5 mb-3">
                         {skillPrompts.examples.map((ex, i) => (
-                          <span key={i} className="text-xs bg-slate-800 text-cyan-400/70 px-2 py-1 rounded-full border border-cyan-500/30">{ex}</span>
+                          <span key={i} className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded">{ex}</span>
                         ))}
                       </div>
                       <textarea
                         value={skillLog.primaryResponse}
                         onChange={(e) => setSkillLog({ ...skillLog, primaryResponse: e.target.value })}
                         placeholder="Describe what happened..."
-                        className={cn('w-full h-32 bg-slate-800 border-2 focus:border-opacity-100 rounded-xl p-4 outline-none resize-none transition-colors', skillLogArea.borderColor, 'border-opacity-30')}
+                        className="w-full h-28 bg-slate-800 border border-slate-700 focus:border-slate-500 rounded-lg p-3 text-sm outline-none resize-none transition-colors"
                         autoFocus
                       />
                     </motion.div>
                   )}
 
-                  {/* Step 1: Follow-up Question */}
                   {skillLog.step === 1 && (
-                    <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <h3 className="text-lg font-bold mb-4 text-white">{skillPrompts.followUp}</h3>
+                    <motion.div key="step1" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                      <h3 className="font-medium mb-3">{skillPrompts.followUp}</h3>
                       <textarea
                         value={skillLog.followUpResponse}
                         onChange={(e) => setSkillLog({ ...skillLog, followUpResponse: e.target.value })}
                         placeholder="Reflect on the outcome..."
-                        className={cn('w-full h-32 bg-slate-800 border-2 focus:border-opacity-100 rounded-xl p-4 outline-none resize-none transition-colors', skillLogArea.borderColor, 'border-opacity-30')}
+                        className="w-full h-28 bg-slate-800 border border-slate-700 focus:border-slate-500 rounded-lg p-3 text-sm outline-none resize-none transition-colors"
                         autoFocus
                       />
-                      <p className="text-xs text-yellow-400/70 mt-2 flex items-center gap-1">
-                        <Zap className="w-3 h-3" /> +10 bonus XP for thoughtful reflection
-                      </p>
+                      <p className="text-xs text-slate-500 mt-2">+10 XP for thoughtful reflection</p>
                     </motion.div>
                   )}
 
-                  {/* Step 2: Image Upload */}
                   {skillLog.step === 2 && (
-                    <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                      <h3 className="text-lg font-bold mb-2 text-white">Upload Evidence (Optional)</h3>
-                      <p className="text-slate-400 text-sm mb-4">Capture a photo of student work, your materials, or anything that documents this moment.</p>
+                    <motion.div key="step2" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+                      <h3 className="font-medium mb-2">Add photo (optional)</h3>
+                      <p className="text-slate-500 text-sm mb-3">Document student work or materials.</p>
 
                       {skillLog.imagePreview ? (
                         <div className="relative">
-                          <img src={skillLog.imagePreview} alt="Upload preview" className="w-full h-48 object-cover rounded-xl border-2 border-cyan-500/30" />
+                          <img src={skillLog.imagePreview} alt="Upload preview" className="w-full h-40 object-cover rounded-lg" />
                           <button
                             onClick={removeImage}
-                            className="absolute top-2 right-2 p-2 bg-red-500/90 rounded-lg hover:bg-red-500 transition-colors border border-red-400"
+                            className="absolute top-2 right-2 p-1.5 bg-red-500 rounded text-white"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
-                        <label className="flex flex-col items-center justify-center w-full h-48 bg-slate-800 border-2 border-dashed border-cyan-500/30 rounded-xl cursor-pointer hover:border-cyan-500/50 transition-colors">
-                          <Camera className="w-10 h-10 text-cyan-400/50 mb-2" />
-                          <span className="text-slate-400">Click to upload image</span>
-                          <span className="text-xs text-yellow-400/70 mt-1 flex items-center gap-1">
-                            <Zap className="w-3 h-3" /> +5 bonus XP
-                          </span>
+                        <label className="flex flex-col items-center justify-center w-full h-32 bg-slate-800 border border-dashed border-slate-600 rounded-lg cursor-pointer hover:border-slate-500 transition-colors">
+                          <Camera className="w-8 h-8 text-slate-500 mb-2" />
+                          <span className="text-sm text-slate-500">Upload image (+5 XP)</span>
                           <input
                             ref={fileInputRef}
                             type="file"
@@ -1134,21 +1113,12 @@ export default function PlayPage() {
                         </label>
                       )}
 
-                      {/* XP Preview */}
-                      <div className="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-400 font-medium">Mission Reward</span>
-                          <div className="flex items-center gap-2 text-xl text-yellow-400">
-                            <Zap className="w-5 h-5 fill-yellow-400" />
-                            <span className="font-black">
-                              {15 + (skillLog.followUpResponse.length > 10 ? 10 : 0) + (skillLog.imagePreview ? 5 : 0)} XP
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-xs text-slate-500 mt-2 space-y-1">
-                          <p className="text-emerald-400/70">+ 15 XP for logging practice</p>
-                          {skillLog.followUpResponse.length > 10 && <p className="text-cyan-400/70">+ 10 XP for reflection</p>}
-                          {skillLog.imagePreview && <p className="text-violet-400/70">+ 5 XP for evidence</p>}
+                      <div className="mt-4 p-3 bg-slate-800 rounded-lg">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-slate-500">Total XP</span>
+                          <span className="font-medium">
+                            {15 + (skillLog.followUpResponse.length > 10 ? 10 : 0) + (skillLog.imagePreview ? 5 : 0)} XP
+                          </span>
                         </div>
                       </div>
                     </motion.div>
@@ -1157,12 +1127,11 @@ export default function PlayPage() {
               </div>
 
               {/* Navigation */}
-              <div className="p-6 pt-0 flex justify-between">
+              <div className="p-4 pt-0 flex justify-between">
                 <button
                   onClick={() => setSkillLog({ ...skillLog, step: skillLog.step - 1 })}
-                  className={cn('flex items-center gap-2 text-slate-400 hover:text-white transition-colors', skillLog.step === 0 && 'invisible')}
+                  className={cn('text-sm text-slate-500 hover:text-white transition-colors', skillLog.step === 0 && 'invisible')}
                 >
-                  <ChevronLeft className="w-5 h-5" />
                   Back
                 </button>
 
@@ -1171,34 +1140,21 @@ export default function PlayPage() {
                     onClick={() => setSkillLog({ ...skillLog, step: skillLog.step + 1 })}
                     disabled={skillLog.step === 0 && skillLog.primaryResponse.length < 10}
                     className={cn(
-                      'flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all border-2',
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                       (skillLog.step === 0 && skillLog.primaryResponse.length >= 10) || skillLog.step === 1
-                        ? 'bg-cyan-500 border-cyan-400 text-slate-900 hover:bg-cyan-400'
-                        : 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed'
+                        ? 'bg-[#2d5a87] text-white hover:bg-[#4a7ba8]'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                     )}
                   >
                     Continue
-                    <ChevronRight className="w-5 h-5" />
                   </button>
                 ) : (
                   <button
                     onClick={handleSubmitSkillLog}
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold bg-yellow-500 border-2 border-yellow-400 text-slate-900 hover:bg-yellow-400 transition-colors"
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-white text-slate-900 hover:bg-slate-100 transition-colors"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-                          <Rocket className="w-5 h-5" />
-                        </motion.div>
-                        Transmitting...
-                      </>
-                    ) : (
-                      <>
-                        Complete
-                        <Rocket className="w-5 h-5" />
-                      </>
-                    )}
+                    {isSubmitting ? 'Saving...' : 'Complete'}
                   </button>
                 )}
               </div>
@@ -1207,77 +1163,64 @@ export default function PlayPage() {
         )}
       </AnimatePresence>
 
-      {/* Completion Modal - Mission Complete */}
+      {/* Completion Modal */}
       <AnimatePresence>
         {showCompletion && skillLog && skillLogArea && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="text-center"
             >
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: 'spring', delay: 0.2 }}
-                className={cn('w-24 h-24 rounded-2xl mx-auto mb-6 flex items-center justify-center bg-slate-800 border-4', skillLogArea.borderColor)}
-                style={{ boxShadow: `0 0 40px ${skillLogArea.textColor === 'text-emerald-400' ? 'rgba(52,211,153,0.4)' : skillLogArea.textColor === 'text-rose-400' ? 'rgba(251,113,133,0.4)' : skillLogArea.textColor === 'text-violet-400' ? 'rgba(167,139,250,0.4)' : 'rgba(34,211,238,0.4)'}` }}
+                transition={{ type: 'spring', delay: 0.1 }}
+                className="w-16 h-16 rounded-xl mx-auto mb-4 flex items-center justify-center bg-slate-800"
               >
-                <Rocket className={cn('w-12 h-12', skillLogArea.textColor)} />
+                <skillLogArea.icon className={cn('w-8 h-8', skillLogArea.textColor)} />
               </motion.div>
 
               <motion.h1
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-3xl font-black mb-2 text-cyan-400 uppercase tracking-wider"
-                style={{ textShadow: '0 0 30px rgba(34, 211, 238, 0.5)' }}
+                transition={{ delay: 0.2 }}
+                className="text-xl font-bold mb-1"
               >
-                Mission Complete!
+                Reflection logged
               </motion.h1>
 
               <motion.p
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-slate-400 mb-4"
+                transition={{ delay: 0.3 }}
+                className="text-slate-500 text-sm mb-4"
               >
                 {skillLog.skillName}
               </motion.p>
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center justify-center gap-2 text-4xl text-yellow-400 mb-8"
+                transition={{ delay: 0.4 }}
+                className="text-2xl font-bold text-[#7db4e0] mb-6"
               >
-                <Zap className="w-10 h-10 fill-yellow-400" />
-                <span className="font-black">+{earnedXp} XP</span>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-                className={cn('inline-flex items-center gap-2 px-4 py-2 rounded-xl mb-8 border-2 bg-slate-800', skillLogArea.borderColor)}
-              >
-                <skillLogArea.icon className={cn('w-4 h-4', skillLogArea.textColor)} />
-                <span className={cn('font-bold', skillLogArea.textColor)}>{skillLogArea.name}</span>
+                +{earnedXp} XP
               </motion.div>
 
               <motion.button
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: 0.5 }}
                 onClick={handleCompletionClose}
-                className="block w-full max-w-xs mx-auto px-6 py-4 rounded-xl bg-cyan-500 border-2 border-cyan-400 text-slate-900 font-bold hover:bg-cyan-400 transition-colors uppercase tracking-wide"
+                className="px-6 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium transition-colors"
               >
-                Return to Base
+                Done
               </motion.button>
             </motion.div>
           </motion.div>

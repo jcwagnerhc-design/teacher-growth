@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================
@@ -40,6 +41,7 @@ model User {
   subskillProgress    UserSubskillProgress[]
   questCompletions    QuestCompletion[]
   reflections         Reflection[]
+  goals               Goal[]
   badges              UserBadge[]
   sharingAsTeacher    SharingPermission[] @relation("TeacherSharing")
   sharingAsViewer     SharingPermission[] @relation("ViewerSharing")
@@ -258,6 +260,8 @@ model Reflection {
   primaryResponse String         @map("primary_response")
   followUpResponse String?       @map("follow_up_response")
   domains         String[]       // Selected domain IDs (e.g., ["planning", "instruction"])
+  skillId         String?        @map("skill_id")    // Granular skill ID (e.g., "questioning", "engagement")
+  skillName       String?        @map("skill_name")  // Human-readable skill name
   xpByDomain      Json?          @map("xp_by_domain") // { "planning": 15, "instruction": 35 }
   xpEarned        Int            @default(0) @map("xp_earned")
 
@@ -275,6 +279,59 @@ enum ReflectionType {
   MILESTONE
   BOSS
   DAILY_MOMENT
+}
+
+// ============================================
+// GOALS
+// ============================================
+
+model Goal {
+  id            String     @id @default(uuid())
+  userId        String     @map("user_id")
+
+  title         String                          // "Improve questioning techniques"
+  description   String?                         // Optional longer description
+  goalType      GoalType   @map("goal_type")    // WEEKLY, MONTHLY, CUSTOM
+
+  // What to track
+  targetType    TargetType @map("target_type")  // REFLECTION_COUNT, SKILL_FOCUS, DOMAIN_FOCUS
+  targetValue   Int        @map("target_value") // e.g., 5 reflections
+  targetSkillId String?    @map("target_skill_id")  // Optional: specific skill
+  targetDomain  String?    @map("target_domain")    // Optional: specific domain
+
+  // Progress
+  currentValue  Int        @default(0) @map("current_value")
+  status        GoalStatus @default(ACTIVE)
+
+  // Dates
+  startDate     DateTime   @default(now()) @map("start_date")
+  dueDate       DateTime?  @map("due_date")
+  completedAt   DateTime?  @map("completed_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  user          User       @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@index([userId, dueDate])
+  @@map("goals")
+}
+
+enum GoalType {
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum TargetType {
+  REFLECTION_COUNT    // "Log 5 reflections this week"
+  SKILL_FOCUS         // "Reflect on questioning 3 times"
+  DOMAIN_FOCUS        // "Focus on instruction domain 5 times"
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
 }
 
 // ============================================

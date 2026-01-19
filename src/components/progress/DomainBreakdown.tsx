@@ -22,34 +22,34 @@ const DOMAIN_CONFIG = {
   planning: {
     name: 'Planning & Prep',
     icon: ClipboardList,
-    color: '#10b981', // emerald-500
-    bgColor: 'bg-emerald-500',
-    textColor: 'text-emerald-400',
-    borderColor: 'border-emerald-400',
+    color: '#2d5a87', // Blair navy light
+    bgColor: 'bg-[#2d5a87]',
+    textColor: 'text-[#7db4e0]',
+    borderColor: 'border-[#4a7ba8]',
   },
   environment: {
     name: 'Classroom Culture',
     icon: Heart,
-    color: '#f43f5e', // rose-500
-    bgColor: 'bg-rose-500',
-    textColor: 'text-rose-400',
-    borderColor: 'border-rose-400',
+    color: '#1e3a5f', // Blair navy
+    bgColor: 'bg-[#1e3a5f]',
+    textColor: 'text-[#6ba3d6]',
+    borderColor: 'border-[#3d5a7f]',
   },
   instruction: {
     name: 'Instruction',
     icon: Presentation,
-    color: '#8b5cf6', // violet-500
-    bgColor: 'bg-violet-500',
-    textColor: 'text-violet-400',
-    borderColor: 'border-violet-400',
+    color: '#4a7ba8', // Blair bright navy
+    bgColor: 'bg-[#4a7ba8]',
+    textColor: 'text-[#a0c4e8]',
+    borderColor: 'border-[#6ba3d6]',
   },
   assessment: {
     name: 'Assessment',
     icon: BarChart3,
-    color: '#f59e0b', // amber-500
-    bgColor: 'bg-amber-500',
-    textColor: 'text-amber-400',
-    borderColor: 'border-amber-400',
+    color: '#6b7280', // Blair silver
+    bgColor: 'bg-[#6b7280]',
+    textColor: 'text-[#c0c0c0]',
+    borderColor: 'border-[#9ca3af]',
   },
 }
 

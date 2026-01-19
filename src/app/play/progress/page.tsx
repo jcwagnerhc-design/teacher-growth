@@ -127,7 +127,7 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white pb-24">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800 p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -138,7 +138,7 @@ export default function ProgressPage() {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <h1 className="text-xl font-bold flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-cyan-400" />
+            <TrendingUp className="w-5 h-5 text-[#7db4e0]" />
             Growth Progress
           </h1>
           <div className="w-10" />
@@ -155,7 +155,7 @@ export default function ProgressPage() {
               className={cn(
                 'px-4 py-2 rounded-lg font-medium text-sm transition-all',
                 period === p
-                  ? 'bg-cyan-500 text-slate-900'
+                  ? 'bg-[#2d5a87] text-white'
                   : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
               )}
             >
@@ -166,7 +166,7 @@ export default function ProgressPage() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-[#7db4e0] animate-spin" />
           </div>
         ) : error ? (
           <div className="text-center py-12">
@@ -187,29 +187,29 @@ export default function ProgressPage() {
               className="grid grid-cols-2 md:grid-cols-4 gap-3"
             >
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
-                <Zap className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-yellow-400">
+                <Zap className="w-6 h-6 text-[#c0c0c0] mx-auto mb-2" />
+                <p className="text-2xl font-bold text-[#c0c0c0]">
                   {timelineData?.summary.totalXp || 0}
                 </p>
                 <p className="text-xs text-slate-400">Total XP</p>
               </div>
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
-                <Flame className="w-6 h-6 text-orange-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-orange-400">
+                <Flame className="w-6 h-6 text-[#a0c4e8] mx-auto mb-2" />
+                <p className="text-2xl font-bold text-[#a0c4e8]">
                   {activityData?.streak.current || 0}
                 </p>
                 <p className="text-xs text-slate-400">Day Streak</p>
               </div>
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
-                <Calendar className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-emerald-400">
+                <Calendar className="w-6 h-6 text-[#6ba3d6] mx-auto mb-2" />
+                <p className="text-2xl font-bold text-[#6ba3d6]">
                   {activityData?.summary.activeDays || 0}
                 </p>
                 <p className="text-xs text-slate-400">Days Active</p>
               </div>
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-center">
-                <Target className="w-6 h-6 text-violet-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-violet-400">
+                <Target className="w-6 h-6 text-[#7db4e0] mx-auto mb-2" />
+                <p className="text-2xl font-bold text-[#7db4e0]">
                   {timelineData?.summary.averageXp || 0}
                 </p>
                 <p className="text-xs text-slate-400">Avg XP/Day</p>
@@ -225,12 +225,12 @@ export default function ProgressPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-cyan-400" />
+                  <TrendingUp className="w-5 h-5 text-[#7db4e0]" />
                   XP Over Time
                 </h2>
                 {timelineData?.summary.bestDay && (
                   <div className="text-xs text-slate-400">
-                    Best: <span className="text-cyan-400 font-medium">{timelineData.summary.bestDay.total} XP</span>
+                    Best: <span className="text-[#7db4e0] font-medium">{timelineData.summary.bestDay.total} XP</span>
                   </div>
                 )}
               </div>
@@ -251,7 +251,7 @@ export default function ProgressPage() {
               className="bg-slate-900/50 border border-slate-800 rounded-xl p-4"
             >
               <h2 className="font-semibold flex items-center gap-2 mb-4">
-                <Calendar className="w-5 h-5 text-emerald-400" />
+                <Calendar className="w-5 h-5 text-[#6ba3d6]" />
                 Activity Calendar
               </h2>
               {activityData && (
@@ -270,7 +270,7 @@ export default function ProgressPage() {
               className="bg-slate-900/50 border border-slate-800 rounded-xl p-4"
             >
               <h2 className="font-semibold flex items-center gap-2 mb-4">
-                <BarChart3 className="w-5 h-5 text-violet-400" />
+                <BarChart3 className="w-5 h-5 text-[#a0c4e8]" />
                 Growth by Domain
               </h2>
               {activityData && (
@@ -290,38 +290,38 @@ export default function ProgressPage() {
                 className="bg-slate-900/50 border border-slate-800 rounded-xl p-4"
               >
                 <h2 className="font-semibold flex items-center gap-2 mb-4">
-                  <Zap className="w-5 h-5 text-yellow-400" />
+                  <Zap className="w-5 h-5 text-[#c0c0c0]" />
                   XP Sources
                 </h2>
                 <div className="space-y-3">
                   {timelineData.bySource.signal > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-400">Daily Check-ins</span>
-                      <span className="text-violet-400 font-medium">+{timelineData.bySource.signal} XP</span>
+                      <span className="text-[#7db4e0] font-medium">+{timelineData.bySource.signal} XP</span>
                     </div>
                   )}
                   {timelineData.bySource.reflection > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-400">Reflections</span>
-                      <span className="text-pink-400 font-medium">+{timelineData.bySource.reflection} XP</span>
+                      <span className="text-[#a0c4e8] font-medium">+{timelineData.bySource.reflection} XP</span>
                     </div>
                   )}
                   {timelineData.bySource.quest > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-400">Quests</span>
-                      <span className="text-amber-400 font-medium">+{timelineData.bySource.quest} XP</span>
+                      <span className="text-[#c0c0c0] font-medium">+{timelineData.bySource.quest} XP</span>
                     </div>
                   )}
                   {timelineData.bySource.streak > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-400">Streak Bonus</span>
-                      <span className="text-emerald-400 font-medium">+{timelineData.bySource.streak} XP</span>
+                      <span className="text-[#6ba3d6] font-medium">+{timelineData.bySource.streak} XP</span>
                     </div>
                   )}
                   {timelineData.bySource.variety > 0 && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-400">Variety & Bonuses</span>
-                      <span className="text-orange-400 font-medium">+{timelineData.bySource.variety} XP</span>
+                      <span className="text-[#9ca3af] font-medium">+{timelineData.bySource.variety} XP</span>
                     </div>
                   )}
                 </div>
@@ -333,26 +333,26 @@ export default function ProgressPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-gradient-to-r from-violet-500/20 to-purple-500/20 border border-violet-500/30 rounded-xl p-4"
+              className="bg-gradient-to-r from-[#1e3a5f]/40 to-[#2d5a87]/40 border border-[#4a7ba8]/30 rounded-xl p-4"
             >
               <h2 className="font-semibold flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5 text-violet-400" />
+                <Sparkles className="w-5 h-5 text-[#7db4e0]" />
                 Growth Insights
               </h2>
               <div className="space-y-2 text-sm text-slate-300">
                 {activityData && activityData.streak.current > 0 && (
                   <p>
-                    You&apos;re on a <span className="text-orange-400 font-medium">{activityData.streak.current}-day streak</span>! Keep it going.
+                    You&apos;re on a <span className="text-[#a0c4e8] font-medium">{activityData.streak.current}-day streak</span>! Keep it going.
                   </p>
                 )}
                 {activityData && activityData.streak.longest > activityData.streak.current && (
                   <p>
-                    Your record is <span className="text-emerald-400 font-medium">{activityData.streak.longest} days</span>. You&apos;re {activityData.streak.longest - activityData.streak.current} days away from beating it!
+                    Your record is <span className="text-[#6ba3d6] font-medium">{activityData.streak.longest} days</span>. You&apos;re {activityData.streak.longest - activityData.streak.current} days away from beating it!
                   </p>
                 )}
                 {timelineData && timelineData.summary.averageXp > 0 && (
                   <p>
-                    You&apos;re averaging <span className="text-cyan-400 font-medium">{timelineData.summary.averageXp} XP per active day</span>.
+                    You&apos;re averaging <span className="text-[#7db4e0] font-medium">{timelineData.summary.averageXp} XP per active day</span>.
                   </p>
                 )}
                 {activityData && activityData.summary.totalActivities === 0 && (
@@ -370,25 +370,25 @@ export default function ProgressPage() {
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-lg border-t border-slate-800 z-30">
         <div className="max-w-4xl mx-auto px-4">
           <div className="flex items-center justify-around py-3">
-            <button onClick={() => router.push('/play')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors">
+            <button onClick={() => router.push('/play')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#7db4e0] transition-colors">
               <Rocket className="w-6 h-6" />
               <span className="text-xs">Base</span>
             </button>
-            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-violet-400 transition-colors">
+            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#a0c4e8] transition-colors">
               <BookOpen className="w-6 h-6" />
               <span className="text-xs">Log</span>
             </button>
-            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-amber-400 transition-colors">
+            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#c0c0c0] transition-colors">
               <Sparkles className="w-6 h-6" />
               <span className="text-xs">Journal</span>
+            </button>
+            <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-[#7db4e0] transition-colors">
+              <Target className="w-6 h-6" />
+              <span className="text-xs">Goals</span>
             </button>
             <button className="flex flex-col items-center gap-1 text-white">
               <TrendingUp className="w-6 h-6" />
               <span className="text-xs font-bold">Progress</span>
-            </button>
-            <button onClick={() => router.push('/play/profile')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors">
-              <Award className="w-6 h-6" />
-              <span className="text-xs">Rank</span>
             </button>
           </div>
         </div>

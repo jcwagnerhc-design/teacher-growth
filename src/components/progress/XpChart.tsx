@@ -30,12 +30,12 @@ interface XpChartProps {
 }
 
 const COLORS = {
-  total: '#22d3ee', // cyan-400
-  signal: '#a78bfa', // violet-400
-  reflection: '#f472b6', // pink-400
-  quest: '#fbbf24', // amber-400
-  streak: '#34d399', // emerald-400
-  variety: '#f97316', // orange-400
+  total: '#7db4e0', // Blair light blue
+  signal: '#6ba3d6', // Blair medium blue
+  reflection: '#a0c4e8', // Blair soft blue
+  quest: '#c0c0c0', // Blair silver
+  streak: '#4a7ba8', // Blair bright navy
+  variety: '#9ca3af', // Blair light silver
 }
 
 export function XpChart({ data, period, showBreakdown = false }: XpChartProps) {
@@ -55,38 +55,38 @@ export function XpChart({ data, period, showBreakdown = false }: XpChartProps) {
         <p className="text-slate-400 text-sm mb-2">
           {format(parseISO(data.date), 'EEEE, MMM d')}
         </p>
-        <p className="text-cyan-400 font-bold text-lg">
+        <p className="text-[#7db4e0] font-bold text-lg">
           {data.total} XP
         </p>
         {showBreakdown && data.total > 0 && (
           <div className="mt-2 pt-2 border-t border-slate-700 space-y-1 text-xs">
             {data.signal > 0 && (
               <p className="flex justify-between">
-                <span className="text-violet-400">Signals</span>
+                <span className="text-[#6ba3d6]">Signals</span>
                 <span className="text-slate-300">+{data.signal}</span>
               </p>
             )}
             {data.reflection > 0 && (
               <p className="flex justify-between">
-                <span className="text-pink-400">Reflections</span>
+                <span className="text-[#a0c4e8]">Reflections</span>
                 <span className="text-slate-300">+{data.reflection}</span>
               </p>
             )}
             {data.quest > 0 && (
               <p className="flex justify-between">
-                <span className="text-amber-400">Quests</span>
+                <span className="text-[#c0c0c0]">Quests</span>
                 <span className="text-slate-300">+{data.quest}</span>
               </p>
             )}
             {data.streak > 0 && (
               <p className="flex justify-between">
-                <span className="text-emerald-400">Streak</span>
+                <span className="text-[#4a7ba8]">Streak</span>
                 <span className="text-slate-300">+{data.streak}</span>
               </p>
             )}
             {data.variety > 0 && (
               <p className="flex justify-between">
-                <span className="text-orange-400">Bonuses</span>
+                <span className="text-[#9ca3af]">Bonuses</span>
                 <span className="text-slate-300">+{data.variety}</span>
               </p>
             )}

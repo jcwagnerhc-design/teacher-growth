@@ -49,7 +49,7 @@ Respond with exactly two parts in this JSON format:
 Keep the total response under 80 words. Be encouraging but substantive. No generic praise like "Great job!" - be specific to what they shared. Return ONLY the JSON, no other text.`
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     const result = await model.generateContent(prompt)
     const response = result.response
     const text = response.text()
@@ -94,7 +94,7 @@ In 2-3 sentences, share ONE meaningful pattern you notice. Focus on:
 Be specific and reference their actual reflections. Start with "I notice..." or "Looking at your reflections..."`
 
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
     const result = await model.generateContent(prompt)
     const response = result.response
     return response.text().trim()

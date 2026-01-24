@@ -1,0 +1,52 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getCoachingResponse } from '@/lib/ai'
+
+interface CoachingRequest {
+  domain: string
+  domainName: string
+  primaryResponse: string
+  followUpResponse?: string
+  skillName?: string
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json() as CoachingRequest
+
+    const { domain, domainName, primaryResponse, followUpResponse, skillName } = body
+
+    if (!primaryResponse) {
+      return NextResponse.json(
+        { error: 'primaryResponse is required' },
+        { status: 400 }
+      )
+    }
+
+    const coaching = await getCoachingResponse({
+      domain: domain || 'instruction',
+      domainName: domainName || 'Teaching',
+      primaryResponse,
+      followUpResponse,
+      skillName,
+    })
+
+    if (!coaching) {
+      return NextResponse.json({
+        available: false,
+        message: 'AI coaching not available',
+      })
+    }
+
+    return NextResponse.json({
+      available: true,
+      insight: coaching.insight,
+      strategy: coaching.strategy,
+    })
+  } catch (error) {
+    console.error('Coaching API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to get coaching response' },
+      { status: 500 }
+    )
+  }
+}

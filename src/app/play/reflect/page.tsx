@@ -239,6 +239,11 @@ export default function ReflectPage() {
     targetValue: number
     completed: boolean
   }>>([])
+  const [coaching, setCoaching] = useState<{
+    insight: string
+    strategy: string
+  } | null>(null)
+  const [isLoadingCoaching, setIsLoadingCoaching] = useState(false)
 
 
   const domain = DOMAINS.find(d => d.id === selectedDomain)
@@ -310,6 +315,33 @@ export default function ReflectPage() {
       }
 
       setIsComplete(true)
+
+      // Fetch AI coaching in background
+      setIsLoadingCoaching(true)
+      try {
+        const coachingRes = await fetch('/api/coaching', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            domain: selectedDomain,
+            domainName: domain?.name || 'Teaching',
+            primaryResponse,
+            followUpResponse: followUpResponse || undefined,
+            skillName: skill?.name,
+          }),
+        })
+        const coachingData = await coachingRes.json()
+        if (coachingData.available) {
+          setCoaching({
+            insight: coachingData.insight,
+            strategy: coachingData.strategy,
+          })
+        }
+      } catch (coachingErr) {
+        console.log('Coaching not available:', coachingErr)
+      } finally {
+        setIsLoadingCoaching(false)
+      }
     } catch (err) {
       console.error('Failed to save reflection:', err)
       setError(err instanceof Error ? err.message : 'Failed to save reflection')
@@ -414,10 +446,46 @@ export default function ReflectPage() {
             </motion.div>
           )}
 
+          {/* AI Coaching */}
+          {(isLoadingCoaching || coaching) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: updatedGoals.length > 0 ? 0.55 : 0.5 }}
+              className="bg-gradient-to-br from-[#1e3a5f]/80 to-[#0f2744]/80 backdrop-blur rounded-2xl p-5 mb-6 border-2 border-[#4a7ba8]/50"
+            >
+              <p className="text-sm text-[#7db4e0] font-bold mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                Coach&apos;s Corner
+              </p>
+              {isLoadingCoaching ? (
+                <div className="flex items-center gap-2 text-slate-400">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <Star className="w-4 h-4" />
+                  </motion.div>
+                  <span className="text-sm">Getting coaching feedback...</span>
+                </div>
+              ) : coaching ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-white text-sm leading-relaxed">{coaching.insight}</p>
+                  </div>
+                  <div className="bg-[#2d5a87]/30 rounded-lg p-3 border border-[#4a7ba8]/30">
+                    <p className="text-xs text-[#7db4e0] font-bold mb-1 uppercase tracking-wide">Try Tomorrow</p>
+                    <p className="text-white text-sm leading-relaxed">{coaching.strategy}</p>
+                  </div>
+                </div>
+              ) : null}
+            </motion.div>
+          )}
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: updatedGoals.length > 0 ? 0.55 : 0.5 }}
+            transition={{ delay: updatedGoals.length > 0 ? 0.65 : 0.6 }}
             className="bg-slate-900/80 backdrop-blur rounded-2xl p-5 mb-6 border-2 border-slate-700"
           >
             <p className="text-sm text-slate-400 mb-2">You reflected on:</p>
@@ -427,7 +495,7 @@ export default function ReflectPage() {
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.7 }}
             onClick={() => router.push('/play')}
             className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#1e5f8f] to-[#2d6fa0] text-white font-black text-lg uppercase tracking-wide hover:scale-105 transition-transform shadow-lg shadow-[#1e5f8f]/40 border-2 border-[#4a90c2]"
           >

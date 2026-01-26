@@ -29,6 +29,7 @@ import {
 import { cn } from '@/lib/utils'
 import PixelCharacter, { DEFAULT_CHARACTER, CharacterCustomization } from '@/components/PixelCharacter'
 import { GoalCard, Goal } from '@/components/goals'
+import { CoachCorner } from '@/components/coaching'
 
 // Demo user ID
 const DEMO_USER_ID = 'demo-user-001'
@@ -599,6 +600,11 @@ export default function PlayPage() {
             )}
           </AnimatePresence>
         </motion.div>
+      </div>
+
+      {/* Coach's Corner - Floating Panel */}
+      <div className="absolute top-20 right-4 z-20 max-w-xs w-72">
+        <CoachCorner userId={DEMO_USER_ID} defaultExpanded={false} />
       </div>
 
       {/* Space Station Classroom View */}

@@ -19,6 +19,7 @@ import {
   Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CoachChat } from '@/components/coaching'
 
 // Demo user ID for development - in production this would come from auth
 const DEMO_USER_ID = 'demo-user-001'
@@ -220,6 +221,18 @@ const FloatingStars = () => (
 
 type ReflectionMode = 'win' | 'growth' | null
 
+interface CoachSuggestion {
+  suggestedFocus: {
+    domain: string
+    domainName: string
+    skill?: string
+    skillName?: string
+    reason: string
+  } | null
+  prompt: string
+  context: string
+}
+
 export default function ReflectPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -245,10 +258,107 @@ export default function ReflectPage() {
   } | null>(null)
   const [isLoadingCoaching, setIsLoadingCoaching] = useState(false)
 
+  // Coach suggestion state
+  const [coachSuggestion, setCoachSuggestion] = useState<CoachSuggestion | null>(null)
+  const [isLoadingCoachSuggestion, setIsLoadingCoachSuggestion] = useState(false)
+  const [showCoachStep, setShowCoachStep] = useState(false)
+  const [dynamicPrompt, setDynamicPrompt] = useState<string | null>(null)
+
 
   const domain = DOMAINS.find(d => d.id === selectedDomain)
   const skill = domain?.skills.find(s => s.id === selectedSkill)
   const skillPrompts = selectedSkill ? SKILL_PROMPTS[selectedSkill] : null
+
+  // Fetch dynamic prompt for a specific domain/skill
+  const fetchDynamicPrompt = async (domainId: string, skillId: string) => {
+    try {
+      const response = await fetch(`/api/coaching/prompt?userId=${DEMO_USER_ID}&domain=${domainId}&skill=${skillId}`)
+      const data = await response.json()
+
+      if (data.available && data.prompt) {
+        setDynamicPrompt(data.prompt)
+      }
+    } catch (err) {
+      console.log('Dynamic prompt not available:', err)
+    }
+  }
+
+  // Handle mode selection
+  const handleModeSelect = async (mode: ReflectionMode) => {
+    setReflectionMode(mode)
+    setIsLoadingCoachSuggestion(true)
+    setStep(1) // Show loading state while fetching suggestion
+
+    try {
+      // Check if there's a stored suggestion from the dashboard
+      const storedSuggestion = localStorage.getItem('coachSuggestion')
+      if (storedSuggestion) {
+        localStorage.removeItem('coachSuggestion')
+        const parsed = JSON.parse(storedSuggestion)
+        setCoachSuggestion({
+          suggestedFocus: {
+            domain: parsed.domain,
+            domainName: DOMAINS.find(d => d.id === parsed.domain)?.name || parsed.domain,
+            skill: parsed.skill,
+            skillName: parsed.skill ? DOMAINS.flatMap(d => d.skills).find(s => s.id === parsed.skill)?.name : undefined,
+            reason: parsed.reason,
+          },
+          prompt: '',
+          context: parsed.reason,
+        })
+        setShowCoachStep(true)
+        setIsLoadingCoachSuggestion(false)
+        return
+      }
+
+      const response = await fetch(`/api/coaching/prompt?userId=${DEMO_USER_ID}`)
+      const data = await response.json()
+
+      if (data.available && data.suggestedFocus) {
+        setCoachSuggestion({
+          suggestedFocus: data.suggestedFocus,
+          prompt: data.prompt,
+          context: data.context,
+        })
+        setShowCoachStep(true)
+      } else {
+        // No coach suggestion available, skip to domain selection
+        setShowCoachStep(false)
+        setStep(2)
+      }
+    } catch (err) {
+      console.log('Coach suggestion not available:', err)
+      // Error fetching, skip to domain selection
+      setShowCoachStep(false)
+      setStep(2)
+    } finally {
+      setIsLoadingCoachSuggestion(false)
+    }
+  }
+
+  // Handle accepting coach suggestion
+  const handleAcceptSuggestion = () => {
+    if (coachSuggestion?.suggestedFocus) {
+      const { domain: suggestedDomain, skill: suggestedSkill } = coachSuggestion.suggestedFocus
+      setSelectedDomain(suggestedDomain)
+      if (suggestedSkill) {
+        setSelectedSkill(suggestedSkill)
+        // Fetch dynamic prompt for this skill
+        fetchDynamicPrompt(suggestedDomain, suggestedSkill)
+        setStep(3) // Skip to reflect step
+      } else {
+        setStep(2) // Go to skill selection
+      }
+    }
+  }
+
+  // Handle skipping coach suggestion
+  const handleSkipSuggestion = () => {
+    setStep(2) // Go to domain selection
+  }
+
+  // Adjusted step for display (accounts for coach step)
+  const displayStep = showCoachStep ? step : (step === 1 ? 1 : step > 1 ? step : step)
 
   // Get mode-specific prompts
   const getPromptForMode = () => {
@@ -477,6 +587,20 @@ export default function ReflectPage() {
                     <p className="text-xs text-[#7db4e0] font-bold mb-1 uppercase tracking-wide">Try Tomorrow</p>
                     <p className="text-white text-sm leading-relaxed">{coaching.strategy}</p>
                   </div>
+
+                  {/* Conversational Coaching Chat */}
+                  <CoachChat
+                    context={{
+                      domain: selectedDomain || 'instruction',
+                      domainName: domain?.name || 'Teaching',
+                      skillName: skill?.name,
+                      primaryResponse,
+                      followUpResponse: followUpResponse || undefined,
+                      initialInsight: coaching.insight,
+                      initialStrategy: coaching.strategy,
+                    }}
+                    className="mt-4"
+                  />
                 </div>
               ) : null}
             </motion.div>
@@ -530,15 +654,16 @@ export default function ReflectPage() {
         <div className="h-3 bg-[#1e3a5f] rounded-full overflow-hidden border-2 border-[#2d4a6f]">
           <motion.div
             className="h-full bg-gradient-to-r from-[#1e5f8f] via-[#2d6fa0] to-[#c0c0c0]"
-            animate={{ width: `${((step + 1) / 5) * 100}%` }}
+            animate={{ width: `${((step + 1) / 6) * 100}%` }}
           />
         </div>
         <div className="flex justify-between mt-2 text-xs font-black tracking-wide">
           <span className={step >= 0 ? 'text-[#6ba3d6]' : 'text-slate-600'}>START</span>
-          <span className={step >= 1 ? 'text-[#6ba3d6]' : 'text-slate-600'}>AREA</span>
-          <span className={step >= 2 ? 'text-[#6ba3d6]' : 'text-slate-600'}>SKILL</span>
-          <span className={step >= 3 ? 'text-[#6ba3d6]' : 'text-slate-600'}>REFLECT</span>
-          <span className={step >= 4 ? 'text-[#c0c0c0]' : 'text-slate-600'}>DEEPEN</span>
+          <span className={step >= 1 ? 'text-[#6ba3d6]' : 'text-slate-600'}>COACH</span>
+          <span className={step >= 2 ? 'text-[#6ba3d6]' : 'text-slate-600'}>AREA</span>
+          <span className={step >= 3 ? 'text-[#6ba3d6]' : 'text-slate-600'}>SKILL</span>
+          <span className={step >= 4 ? 'text-[#6ba3d6]' : 'text-slate-600'}>REFLECT</span>
+          <span className={step >= 5 ? 'text-[#c0c0c0]' : 'text-slate-600'}>DEEPEN</span>
         </div>
       </div>
 
@@ -565,10 +690,7 @@ export default function ReflectPage() {
 
                 <div className="space-y-4">
                   <button
-                    onClick={() => {
-                      setReflectionMode('win')
-                      setStep(1)
-                    }}
+                    onClick={() => handleModeSelect('win')}
                     className="w-full p-6 rounded-xl border-2 transition-all text-left hover:scale-[1.02] bg-[#0f2744]/50 border-[#4a7ba8]/50 hover:border-[#6ba3d6] hover:bg-[#1e3a5f]/50"
                   >
                     <div className="flex items-center gap-4">
@@ -583,10 +705,7 @@ export default function ReflectPage() {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setReflectionMode('growth')
-                      setStep(1)
-                    }}
+                    onClick={() => handleModeSelect('growth')}
                     className="w-full p-6 rounded-xl border-2 transition-all text-left hover:scale-[1.02] bg-[#0f2744]/50 border-[#6b7280]/50 hover:border-[#9ca3af] hover:bg-[#1e3a5f]/50"
                   >
                     <div className="flex items-center gap-4">
@@ -603,8 +722,85 @@ export default function ReflectPage() {
               </motion.div>
             )}
 
-            {/* Step 1: Select Domain */}
-            {step === 1 && (
+            {/* Step 1: Coach's Suggestion (if available) */}
+            {step === 1 && showCoachStep && (
+              <motion.div
+                key="coach-suggestion"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+              >
+                {isLoadingCoachSuggestion ? (
+                  <div className="text-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="inline-block"
+                    >
+                      <Star className="w-8 h-8 text-[#7db4e0]" />
+                    </motion.div>
+                    <p className="text-slate-400 mt-4">Your coach is thinking...</p>
+                  </div>
+                ) : coachSuggestion?.suggestedFocus ? (
+                  <>
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <Sparkles className="w-5 h-5 text-[#7db4e0]" />
+                      <span className="text-sm font-bold text-[#7db4e0] uppercase tracking-wide">Coach&apos;s Suggestion</span>
+                    </div>
+
+                    <h1 className="text-2xl font-black mb-2 text-center text-white">
+                      Your coach suggests...
+                    </h1>
+
+                    <div className="bg-gradient-to-br from-[#1e3a5f]/80 to-[#0f2744]/80 rounded-2xl p-5 mb-6 border-2 border-[#4a7ba8]/50">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-lg bg-[#2d5a87] flex items-center justify-center">
+                          {(() => {
+                            const suggestedDomain = DOMAINS.find(d => d.id === coachSuggestion.suggestedFocus?.domain)
+                            if (suggestedDomain) {
+                              const Icon = suggestedDomain.icon
+                              return <Icon className="w-6 h-6 text-white" />
+                            }
+                            return <Target className="w-6 h-6 text-white" />
+                          })()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-lg text-white">
+                            {coachSuggestion.suggestedFocus.domainName}
+                          </p>
+                          {coachSuggestion.suggestedFocus.skillName && (
+                            <p className="text-sm text-[#7db4e0]">
+                              {coachSuggestion.suggestedFocus.skillName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-300 leading-relaxed">
+                        {coachSuggestion.suggestedFocus.reason}
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleAcceptSuggestion}
+                        className="w-full p-4 rounded-xl bg-gradient-to-r from-[#1e5f8f] to-[#2d6fa0] text-white font-bold text-lg hover:scale-[1.02] transition-transform border-2 border-[#4a90c2] shadow-lg shadow-[#1e5f8f]/30"
+                      >
+                        Sounds good!
+                      </button>
+                      <button
+                        onClick={handleSkipSuggestion}
+                        className="w-full p-3 rounded-xl bg-slate-900/50 text-slate-400 font-medium hover:text-white hover:bg-slate-800/50 transition-colors border border-slate-700"
+                      >
+                        I have something else in mind
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+              </motion.div>
+            )}
+
+            {/* Step 2: Select Domain (was Step 1) */}
+            {step === 2 && (
               <motion.div
                 key="domain"
                 initial={{ opacity: 0, x: 50 }}
@@ -641,7 +837,7 @@ export default function ReflectPage() {
                       onClick={() => {
                         setSelectedDomain(d.id)
                         setSelectedSkill(null)
-                        setStep(2)
+                        setStep(3)
                       }}
                       className={cn(
                         'p-4 rounded-xl border-2 transition-all text-left hover:scale-[1.02]',
@@ -663,8 +859,8 @@ export default function ReflectPage() {
               </motion.div>
             )}
 
-            {/* Step 2: Select Skill */}
-            {step === 2 && domain && (
+            {/* Step 3: Select Skill */}
+            {step === 3 && domain && (
               <motion.div
                 key="skill"
                 initial={{ opacity: 0, x: 50 }}
@@ -695,7 +891,8 @@ export default function ReflectPage() {
                         key={s.id}
                         onClick={() => {
                           setSelectedSkill(s.id)
-                          setStep(3)
+                          fetchDynamicPrompt(selectedDomain!, s.id)
+                          setStep(4)
                         }}
                         className={cn(
                           'w-full p-4 rounded-xl border-2 transition-all text-left hover:scale-[1.01]',
@@ -718,8 +915,8 @@ export default function ReflectPage() {
               </motion.div>
             )}
 
-            {/* Step 3: Primary Response */}
-            {step === 3 && skillPrompts && domain && (
+            {/* Step 4: Primary Response */}
+            {step === 4 && skillPrompts && domain && (
               <motion.div
                 key="primary"
                 initial={{ opacity: 0, x: 50 }}
@@ -734,16 +931,18 @@ export default function ReflectPage() {
                 </div>
 
                 <h1 className="text-2xl font-black mb-4 text-center text-white">
-                  {reflectionMode === 'win' ? skillPrompts.primary : `How would you like to improve at this?`}
+                  {dynamicPrompt || (reflectionMode === 'win' ? skillPrompts.primary : `How would you like to improve at this?`)}
                 </h1>
 
-                <div className="flex flex-wrap gap-2 mb-4 justify-center">
-                  {skillPrompts.examples.map((ex, i) => (
-                    <span key={i} className="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">
-                      {ex}
-                    </span>
-                  ))}
-                </div>
+                {!dynamicPrompt && (
+                  <div className="flex flex-wrap gap-2 mb-4 justify-center">
+                    {skillPrompts.examples.map((ex, i) => (
+                      <span key={i} className="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">
+                        {ex}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <textarea
                   value={primaryResponse}
@@ -762,8 +961,8 @@ export default function ReflectPage() {
               </motion.div>
             )}
 
-            {/* Step 4: Follow-up */}
-            {step === 4 && skillPrompts && domain && (
+            {/* Step 5: Follow-up */}
+            {step === 5 && skillPrompts && domain && (
               <motion.div
                 key="followup"
                 initial={{ opacity: 0, x: 50 }}
@@ -825,15 +1024,16 @@ export default function ReflectPage() {
           Back
         </button>
 
-        {step < 4 ? (
+        {step < 5 ? (
           <button
             onClick={() => setStep(s => s + 1)}
-            disabled={(step === 3 && primaryResponse.length < 10)}
+            disabled={(step === 4 && primaryResponse.length < 10) || (step === 1 && showCoachStep)}
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-wide transition-all border-2',
-              (step === 0 || step === 1 || step === 2 || (step === 3 && primaryResponse.length >= 10))
+              (step === 0 || step === 2 || step === 3 || (step === 4 && primaryResponse.length >= 10))
                 ? 'bg-gradient-to-r from-[#1e5f8f] to-[#2d6fa0] border-[#4a90c2] text-white hover:scale-105 shadow-lg shadow-[#1e5f8f]/30'
-                : 'bg-[#1e3a5f] border-[#2d4a6f] text-slate-500 cursor-not-allowed'
+                : 'bg-[#1e3a5f] border-[#2d4a6f] text-slate-500 cursor-not-allowed',
+              (step === 1 && showCoachStep) && 'invisible'
             )}
           >
             Continue

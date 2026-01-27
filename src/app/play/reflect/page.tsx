@@ -192,27 +192,27 @@ const DOMAINS = [
   },
 ]
 
-// Floating stars component for space theme
-const FloatingStars = () => (
+// 8-bit pixel stars component
+const PixelStars = () => (
   <div className="fixed inset-0 overflow-hidden pointer-events-none">
-    {[...Array(40)].map((_, i) => (
+    {[...Array(30)].map((_, i) => (
       <motion.div
         key={i}
-        className="absolute rounded-full bg-white"
+        className="absolute bg-white"
         style={{
           left: `${(i * 17 + 23) % 100}%`,
           top: `${(i * 31 + 11) % 100}%`,
-          width: i % 5 === 0 ? '3px' : i % 3 === 0 ? '2px' : '1px',
-          height: i % 5 === 0 ? '3px' : i % 3 === 0 ? '2px' : '1px',
+          width: i % 5 === 0 ? '4px' : '2px',
+          height: i % 5 === 0 ? '4px' : '2px',
+          imageRendering: 'pixelated',
         }}
         animate={{
-          opacity: [0.2, 1, 0.2],
-          scale: [1, 1.5, 1],
+          opacity: [0.3, 1, 0.3],
         }}
         transition={{
-          duration: 2 + (i % 3),
+          duration: 1.5 + (i % 3),
           repeat: Infinity,
-          delay: (i % 5) * 0.4,
+          delay: (i % 5) * 0.3,
         }}
       />
     ))}
@@ -466,7 +466,7 @@ export default function ReflectPage() {
   if (isComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white flex items-center justify-center p-6 relative overflow-hidden">
-        <FloatingStars />
+        <PixelStars />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
@@ -486,9 +486,9 @@ export default function ReflectPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-4xl font-black mb-2 tracking-tight text-white"
+            className="text-3xl font-black mb-2 tracking-[0.15em] text-white uppercase"
           >
-            REFLECTION LOGGED
+            Log Complete!
           </motion.h1>
 
           <motion.p
@@ -610,10 +610,11 @@ export default function ReflectPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: updatedGoals.length > 0 ? 0.65 : 0.6 }}
-            className="bg-slate-900/80 backdrop-blur rounded-2xl p-5 mb-6 border-2 border-slate-700"
+            className="bg-[#0f2744] p-5 mb-6 border-4 border-slate-700"
+            style={{ boxShadow: '4px 4px 0 #0a1628' }}
           >
-            <p className="text-sm text-slate-400 mb-2">You reflected on:</p>
-            <p className="text-white">{primaryResponse.slice(0, 100)}{primaryResponse.length > 100 ? '...' : ''}</p>
+            <p className="text-sm text-slate-400 mb-2 font-black uppercase tracking-wide">You reflected on:</p>
+            <p className="text-white font-medium">{primaryResponse.slice(0, 100)}{primaryResponse.length > 100 ? '...' : ''}</p>
           </motion.div>
 
           <motion.button
@@ -621,7 +622,8 @@ export default function ReflectPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
             onClick={() => router.push('/play')}
-            className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#1e5f8f] to-[#2d6fa0] text-white font-black text-lg uppercase tracking-wide hover:scale-105 transition-transform shadow-lg shadow-[#1e5f8f]/40 border-2 border-[#4a90c2]"
+            className="px-8 py-4 bg-[#2d5a87] text-white font-black text-lg uppercase tracking-[0.15em] hover:translate-x-1 hover:-translate-y-1 transition-transform border-4 border-[#4a7ba8]"
+            style={{ boxShadow: '6px 6px 0 #0a1628' }}
           >
             Return to Base
           </motion.button>
@@ -632,38 +634,39 @@ export default function ReflectPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white flex flex-col relative overflow-hidden">
-      <FloatingStars />
+      <PixelStars />
 
-      {/* Header */}
+      {/* Header - 8-bit style */}
       <header className="p-4 flex items-center justify-between relative z-10">
         <button
           onClick={() => router.back()}
-          className="p-2 text-slate-400 hover:text-white transition-colors"
+          className="p-2 text-slate-400 hover:text-white transition-colors border-2 border-transparent hover:border-slate-600"
         >
           <X className="w-6 h-6" />
         </button>
-        <div className="flex items-center gap-2 text-[#c0c0c0] font-black">
+        <div className="flex items-center gap-2 text-[#c0c0c0] font-black px-4 py-2 border-2 border-[#4a7ba8] bg-[#0f2744]">
           <Rocket className="w-5 h-5" />
-          <span className="text-sm uppercase tracking-widest">Daily Reflection</span>
+          <span className="text-sm uppercase tracking-[0.2em]">Daily Log</span>
         </div>
         <div className="w-10" />
       </header>
 
-      {/* Progress bar */}
+      {/* Progress bar - 8-bit pixel style */}
       <div className="px-6 relative z-10">
-        <div className="h-3 bg-[#1e3a5f] rounded-full overflow-hidden border-2 border-[#2d4a6f]">
+        <div className="h-4 bg-[#0f2744] border-4 border-[#2d4a6f] overflow-hidden" style={{ imageRendering: 'pixelated' }}>
           <motion.div
-            className="h-full bg-gradient-to-r from-[#1e5f8f] via-[#2d6fa0] to-[#c0c0c0]"
+            className="h-full bg-[#4a7ba8]"
             animate={{ width: `${((step + 1) / 6) * 100}%` }}
+            style={{ boxShadow: 'inset -4px 0 0 #6ba3d6' }}
           />
         </div>
-        <div className="flex justify-between mt-2 text-xs font-black tracking-wide">
-          <span className={step >= 0 ? 'text-[#6ba3d6]' : 'text-slate-600'}>START</span>
-          <span className={step >= 1 ? 'text-[#6ba3d6]' : 'text-slate-600'}>COACH</span>
-          <span className={step >= 2 ? 'text-[#6ba3d6]' : 'text-slate-600'}>AREA</span>
-          <span className={step >= 3 ? 'text-[#6ba3d6]' : 'text-slate-600'}>SKILL</span>
-          <span className={step >= 4 ? 'text-[#6ba3d6]' : 'text-slate-600'}>REFLECT</span>
-          <span className={step >= 5 ? 'text-[#c0c0c0]' : 'text-slate-600'}>DEEPEN</span>
+        <div className="flex justify-between mt-2 text-[10px] font-black tracking-[0.15em]">
+          <span className={step >= 0 ? 'text-[#6ba3d6]' : 'text-slate-700'}>START</span>
+          <span className={step >= 1 ? 'text-[#6ba3d6]' : 'text-slate-700'}>COACH</span>
+          <span className={step >= 2 ? 'text-[#6ba3d6]' : 'text-slate-700'}>AREA</span>
+          <span className={step >= 3 ? 'text-[#6ba3d6]' : 'text-slate-700'}>SKILL</span>
+          <span className={step >= 4 ? 'text-[#6ba3d6]' : 'text-slate-700'}>REFLECT</span>
+          <span className={step >= 5 ? 'text-[#c0c0c0]' : 'text-slate-700'}>DEEPEN</span>
         </div>
       </div>
 
@@ -691,30 +694,32 @@ export default function ReflectPage() {
                 <div className="space-y-4">
                   <button
                     onClick={() => handleModeSelect('win')}
-                    className="w-full p-6 rounded-xl border-2 transition-all text-left hover:scale-[1.02] bg-[#0f2744]/50 border-[#4a7ba8]/50 hover:border-[#6ba3d6] hover:bg-[#1e3a5f]/50"
+                    className="w-full p-5 border-4 transition-all text-left hover:translate-x-1 hover:-translate-y-1 bg-[#0f2744] border-[#4a7ba8] hover:border-[#6ba3d6] hover:bg-[#1e3a5f]"
+                    style={{ boxShadow: '4px 4px 0 #1e3a5f' }}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#2d5a87] to-[#4a7ba8] flex items-center justify-center">
+                      <div className="w-14 h-14 bg-[#2d5a87] border-2 border-[#4a7ba8] flex items-center justify-center">
                         <Sparkles className="w-7 h-7 text-white" />
                       </div>
                       <div>
-                        <p className="font-bold text-xl text-[#a0c4e8]">Something went well!</p>
-                        <p className="text-sm text-slate-400 mt-1">Celebrate a win and capture what worked</p>
+                        <p className="font-black text-xl text-[#a0c4e8] uppercase tracking-wide">A win!</p>
+                        <p className="text-sm text-slate-400 mt-1 font-medium">Celebrate what worked</p>
                       </div>
                     </div>
                   </button>
 
                   <button
                     onClick={() => handleModeSelect('growth')}
-                    className="w-full p-6 rounded-xl border-2 transition-all text-left hover:scale-[1.02] bg-[#0f2744]/50 border-[#6b7280]/50 hover:border-[#9ca3af] hover:bg-[#1e3a5f]/50"
+                    className="w-full p-5 border-4 transition-all text-left hover:translate-x-1 hover:-translate-y-1 bg-[#0f2744] border-[#6b7280] hover:border-[#9ca3af] hover:bg-[#1e3a5f]"
+                    style={{ boxShadow: '4px 4px 0 #1e3a5f' }}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#6b7280] to-[#9ca3af] flex items-center justify-center">
+                      <div className="w-14 h-14 bg-[#6b7280] border-2 border-[#9ca3af] flex items-center justify-center">
                         <Target className="w-7 h-7 text-white" />
                       </div>
                       <div>
-                        <p className="font-bold text-xl text-[#c0c0c0]">Something to work on</p>
-                        <p className="text-sm text-slate-400 mt-1">Identify a growth area and plan next steps</p>
+                        <p className="font-black text-xl text-[#c0c0c0] uppercase tracking-wide">Growth area</p>
+                        <p className="text-sm text-slate-400 mt-1 font-medium">Plan your next steps</p>
                       </div>
                     </div>
                   </button>
@@ -840,19 +845,20 @@ export default function ReflectPage() {
                         setStep(3)
                       }}
                       className={cn(
-                        'p-4 rounded-xl border-2 transition-all text-left hover:scale-[1.02]',
+                        'p-4 border-4 transition-all text-left hover:translate-x-1 hover:-translate-y-1',
                         selectedDomain === d.id
-                          ? cn(d.borderColor, d.glowColor, 'shadow-lg bg-slate-800/80')
-                          : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'
+                          ? cn(d.borderColor, 'bg-[#1e3a5f]')
+                          : 'bg-[#0f2744] border-slate-700 hover:border-slate-500'
                       )}
+                      style={{ boxShadow: '3px 3px 0 #0a1628' }}
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center border-2', d.color, d.borderColor)}>
+                        <div className={cn('w-10 h-10 flex items-center justify-center border-2', d.color, d.borderColor)}>
                           <d.icon className="w-5 h-5 text-white" />
                         </div>
                       </div>
-                      <p className="font-bold text-sm">{d.name}</p>
-                      <p className="text-xs text-slate-500">{d.skills.length} skills</p>
+                      <p className="font-black text-sm uppercase tracking-wide">{d.name}</p>
+                      <p className="text-xs text-slate-500 font-medium">{d.skills.length} skills</p>
                     </button>
                   ))}
                 </div>
@@ -895,16 +901,17 @@ export default function ReflectPage() {
                           setStep(4)
                         }}
                         className={cn(
-                          'w-full p-4 rounded-xl border-2 transition-all text-left hover:scale-[1.01]',
+                          'w-full p-4 border-4 transition-all text-left hover:translate-x-1 hover:-translate-y-1',
                           selectedSkill === s.id
-                            ? cn(domain.borderColor, domain.glowColor, 'shadow-lg bg-slate-800/80')
-                            : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'
+                            ? cn(domain.borderColor, 'bg-[#1e3a5f]')
+                            : 'bg-[#0f2744] border-slate-700 hover:border-slate-500'
                         )}
+                        style={{ boxShadow: '3px 3px 0 #0a1628' }}
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-bold">{s.name}</p>
-                            <p className="text-xs text-slate-500 mt-1 line-clamp-1">{prompt?.primary}</p>
+                            <p className="font-black uppercase tracking-wide">{s.name}</p>
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-1 font-medium">{prompt?.primary}</p>
                           </div>
                           <ChevronRight className="w-5 h-5 text-slate-500" />
                         </div>
@@ -949,9 +956,10 @@ export default function ReflectPage() {
                   onChange={(e) => setPrimaryResponse(e.target.value)}
                   placeholder={reflectionMode === 'win' ? "Describe what happened..." : "What did you notice? What would you like to try?"}
                   className={cn(
-                    'w-full h-40 bg-slate-900/80 border-2 rounded-xl p-4 text-lg placeholder:text-slate-600 outline-none resize-none transition-colors',
-                    domain.borderColor, 'border-opacity-50 focus:border-opacity-100'
+                    'w-full h-40 bg-[#0f2744] border-4 p-4 text-lg placeholder:text-slate-600 outline-none resize-none transition-colors font-medium',
+                    domain.borderColor, 'focus:border-[#6ba3d6]'
                   )}
+                  style={{ boxShadow: 'inset 4px 4px 0 rgba(0,0,0,0.3)' }}
                   autoFocus
                 />
 
@@ -982,15 +990,13 @@ export default function ReflectPage() {
                   value={followUpResponse}
                   onChange={(e) => setFollowUpResponse(e.target.value)}
                   placeholder="Optional, but earns +15 XP..."
-                  className={cn(
-                    'w-full h-32 bg-slate-900/80 border-2 rounded-xl p-4 text-lg placeholder:text-slate-600 outline-none resize-none transition-colors',
-                    'border-[#4a7ba8]/50 focus:border-[#6ba3d6]'
-                  )}
+                  className="w-full h-32 bg-[#0f2744] border-4 border-[#4a7ba8] p-4 text-lg placeholder:text-slate-600 outline-none resize-none transition-colors font-medium focus:border-[#6ba3d6]"
+                  style={{ boxShadow: 'inset 4px 4px 0 rgba(0,0,0,0.3)' }}
                   autoFocus
                 />
 
-                {/* XP Preview */}
-                <div className="mt-6 p-4 bg-slate-900/80 rounded-xl border-2 border-[#4a7ba8]/30">
+                {/* XP Preview - 8-bit style */}
+                <div className="mt-6 p-4 bg-[#0f2744] border-4 border-[#4a7ba8]" style={{ boxShadow: '4px 4px 0 #0a1628' }}>
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-[#c0c0c0] font-black uppercase tracking-wide">Reflection XP</p>
                     <div className="flex items-center gap-2 text-2xl text-[#c0c0c0]">
@@ -1011,12 +1017,12 @@ export default function ReflectPage() {
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - 8-bit style */}
       <div className="p-6 flex justify-between items-center relative z-10">
         <button
           onClick={() => setStep(s => s - 1)}
           className={cn(
-            'flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-bold uppercase tracking-wide',
+            'flex items-center gap-2 text-slate-400 hover:text-white transition-colors font-black uppercase tracking-[0.15em] px-4 py-2 border-2 border-transparent hover:border-slate-600',
             step === 0 && 'invisible'
           )}
         >
@@ -1029,12 +1035,13 @@ export default function ReflectPage() {
             onClick={() => setStep(s => s + 1)}
             disabled={(step === 4 && primaryResponse.length < 10) || (step === 1 && showCoachStep)}
             className={cn(
-              'flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-wide transition-all border-2',
+              'flex items-center gap-2 px-6 py-3 font-black uppercase tracking-[0.15em] transition-all border-4',
               (step === 0 || step === 2 || step === 3 || (step === 4 && primaryResponse.length >= 10))
-                ? 'bg-gradient-to-r from-[#1e5f8f] to-[#2d6fa0] border-[#4a90c2] text-white hover:scale-105 shadow-lg shadow-[#1e5f8f]/30'
+                ? 'bg-[#2d5a87] border-[#4a7ba8] text-white hover:translate-x-1 hover:-translate-y-1'
                 : 'bg-[#1e3a5f] border-[#2d4a6f] text-slate-500 cursor-not-allowed',
               (step === 1 && showCoachStep) && 'invisible'
             )}
+            style={{ boxShadow: '4px 4px 0 #0a1628' }}
           >
             Continue
             <ChevronRight className="w-5 h-5" />
@@ -1043,7 +1050,8 @@ export default function ReflectPage() {
           <button
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl font-black uppercase tracking-wide bg-gradient-to-r from-[#c0c0c0] to-[#a0a0a0] border-2 border-[#d0d0d0] text-[#0a1628] hover:scale-105 transition-transform shadow-lg shadow-[#c0c0c0]/30"
+            className="flex items-center gap-2 px-6 py-3 font-black uppercase tracking-[0.15em] bg-[#c0c0c0] border-4 border-[#e0e0e0] text-[#0a1628] hover:translate-x-1 hover:-translate-y-1 transition-transform"
+            style={{ boxShadow: '4px 4px 0 #6b7280' }}
           >
             {isSubmitting ? (
               <>

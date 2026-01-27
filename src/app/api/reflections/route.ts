@@ -246,6 +246,66 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// DELETE - Delete a reflection
+export async function DELETE(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const reflectionId = searchParams.get('id')
+  const userId = searchParams.get('userId')
+
+  if (!reflectionId || !userId) {
+    return NextResponse.json(
+      { error: 'id and userId are required' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    // Verify the reflection belongs to the user
+    const reflection = await prisma.reflection.findFirst({
+      where: { id: reflectionId, userId },
+    })
+
+    if (!reflection) {
+      return NextResponse.json(
+        { error: 'Reflection not found' },
+        { status: 404 }
+      )
+    }
+
+    // Delete in transaction: remove XP, delete ledger entry, delete reflection
+    await prisma.$transaction(async (tx: TransactionClient) => {
+      // Remove XP from user
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          totalXp: { decrement: reflection.xpEarned },
+        },
+      })
+
+      // Delete XP ledger entry
+      await tx.xpLedger.deleteMany({
+        where: {
+          sourceType: 'REFLECTION',
+          sourceId: reflectionId,
+        },
+      })
+
+      // Delete the reflection
+      await tx.reflection.delete({
+        where: { id: reflectionId },
+      })
+    })
+
+    return NextResponse.json({ success: true, xpRemoved: reflection.xpEarned })
+  } catch (error) {
+    console.error('Failed to delete reflection:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete reflection' },
+      { status: 500 }
+    )
+  }
+}
+
 // GET - Fetch reflection history with filtering and pagination
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams

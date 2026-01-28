@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -233,6 +233,11 @@ interface CoachSuggestion {
   context: string
 }
 
+interface TeacherProfile {
+  backstory?: string
+  superpower?: string
+}
+
 export default function ReflectPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -257,12 +262,25 @@ export default function ReflectPage() {
     strategy: string
   } | null>(null)
   const [isLoadingCoaching, setIsLoadingCoaching] = useState(false)
+  const [profile, setProfile] = useState<TeacherProfile>({})
 
   // Coach suggestion state
   const [coachSuggestion, setCoachSuggestion] = useState<CoachSuggestion | null>(null)
   const [isLoadingCoachSuggestion, setIsLoadingCoachSuggestion] = useState(false)
   const [showCoachStep, setShowCoachStep] = useState(false)
   const [dynamicPrompt, setDynamicPrompt] = useState<string | null>(null)
+
+  // Load profile on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('teacher-profile')
+    if (saved) {
+      const parsed = JSON.parse(saved)
+      setProfile({
+        backstory: parsed.backstory || '',
+        superpower: parsed.superpower || '',
+      })
+    }
+  }, [])
 
 
   const domain = DOMAINS.find(d => d.id === selectedDomain)
@@ -438,6 +456,7 @@ export default function ReflectPage() {
             primaryResponse,
             followUpResponse: followUpResponse || undefined,
             skillName: skill?.name,
+            profile: profile.backstory || profile.superpower ? profile : undefined,
           }),
         })
         const coachingData = await coachingRes.json()
@@ -598,6 +617,7 @@ export default function ReflectPage() {
                       followUpResponse: followUpResponse || undefined,
                       initialInsight: coaching.insight,
                       initialStrategy: coaching.strategy,
+                      profile: profile.backstory || profile.superpower ? profile : undefined,
                     }}
                     className="mt-4"
                   />

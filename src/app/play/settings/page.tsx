@@ -9,15 +9,19 @@ import {
   User,
   Sparkles,
   Trash2,
+  Home,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CharacterCreator from '@/components/CharacterCreator'
 import PixelCharacter, { CharacterCustomization, DEFAULT_CHARACTER } from '@/components/PixelCharacter'
+import ClassroomCustomizer from '@/components/ClassroomCustomizer'
+import { ClassroomCustomization, DEFAULT_CLASSROOM } from '@/types/classroom'
 
 const defaultProfile = {
   name: 'Teacher',
   character: DEFAULT_CHARACTER,
   mantra: 'listens more than lectures',
+  classroom: DEFAULT_CLASSROOM,
 }
 
 export default function SettingsPage() {
@@ -25,16 +29,18 @@ export default function SettingsPage() {
   const [name, setName] = useState(defaultProfile.name)
   const [character, setCharacter] = useState<CharacterCustomization>(defaultProfile.character)
   const [mantra, setMantra] = useState(defaultProfile.mantra)
+  const [classroom, setClassroom] = useState<ClassroomCustomization>(defaultProfile.classroom)
   const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState<'profile' | 'character'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'character' | 'classroom'>('profile')
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('teacher-profile')
     if (savedProfile) {
       const parsed = JSON.parse(savedProfile)
       setName(parsed.name || defaultProfile.name)
-      setCharacter(parsed.character || defaultProfile.character)
+      setCharacter({ ...DEFAULT_CHARACTER, ...parsed.character })
       setMantra(parsed.mantra || defaultProfile.mantra)
+      setClassroom(parsed.classroom || DEFAULT_CLASSROOM)
     }
   }, [])
 
@@ -47,6 +53,7 @@ export default function SettingsPage() {
       name,
       character,
       mantra,
+      classroom,
     }))
 
     setSaved(true)
@@ -122,6 +129,18 @@ export default function SettingsPage() {
             <Sparkles className="w-5 h-5" />
             Character
           </button>
+          <button
+            onClick={() => setActiveTab('classroom')}
+            className={cn(
+              'flex-1 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2',
+              activeTab === 'classroom'
+                ? 'bg-amber-500 text-slate-950'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            )}
+          >
+            <Home className="w-5 h-5" />
+            Classroom
+          </button>
         </div>
 
         {/* Profile Tab */}
@@ -191,6 +210,20 @@ export default function SettingsPage() {
 
             <p className="text-center text-slate-500 text-sm mt-6">
               Your character gains visual effects as you level up!
+            </p>
+          </motion.div>
+        )}
+
+        {/* Classroom Tab */}
+        {activeTab === 'classroom' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <ClassroomCustomizer value={classroom} onChange={setClassroom} />
+
+            <p className="text-center text-slate-500 text-sm mt-6">
+              Customize your classroom environment!
             </p>
           </motion.div>
         )}

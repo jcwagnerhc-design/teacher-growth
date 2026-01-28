@@ -4,12 +4,18 @@ const genAI = process.env.GEMINI_API_KEY
   ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
   : null
 
+interface TeacherProfile {
+  backstory?: string
+  superpower?: string
+}
+
 interface CoachingInput {
   domain: string
   domainName: string
   primaryResponse: string
   followUpResponse?: string
   skillName?: string
+  profile?: TeacherProfile
 }
 
 interface CoachingResponse {
@@ -32,7 +38,18 @@ export async function getCoachingResponse(input: CoachingInput): Promise<Coachin
 
   const domainContext = DOMAIN_CONTEXT[input.domain] || input.domainName
 
-  const prompt = `You are a warm, experienced instructional coach helping a teacher reflect on their practice. They just logged this reflection:
+  // Build teacher identity context
+  const teacherIdentity = input.profile?.backstory || input.profile?.superpower
+    ? `
+TEACHER IDENTITY:
+${input.profile.backstory ? `Why they teach: "${input.profile.backstory}"` : ''}
+${input.profile.superpower ? `Their superpower: "${input.profile.superpower}"` : ''}
+`
+    : ''
+
+  const prompt = `You are a warm, experienced instructional coach helping a teacher reflect on their practice.
+${teacherIdentity}
+They just logged this reflection:
 
 Domain: ${input.domainName} (${domainContext})
 ${input.skillName ? `Skill focus: ${input.skillName}` : ''}
@@ -46,7 +63,14 @@ Respond with exactly two parts in this JSON format:
   "strategy": "One concrete, actionable strategy they could try tomorrow. Be specific and practical, not abstract."
 }
 
-Keep the total response under 80 words. Be encouraging but substantive. No generic praise like "Great job!" - be specific to what they shared. Return ONLY the JSON, no other text.`
+Guidelines:
+- Keep the total response under 80 words
+- Be encouraging but substantive - no generic praise like "Great job!"
+- Be specific to what they shared
+- If you know their superpower, suggest strategies that leverage it
+- If you know why they teach, connect your encouragement to their deeper motivation when relevant
+
+Return ONLY the JSON, no other text.`
 
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
@@ -121,6 +145,7 @@ interface ChatContext {
   followUpResponse?: string
   initialInsight: string
   initialStrategy: string
+  profile?: TeacherProfile
 }
 
 interface ChatResponse {
@@ -144,8 +169,17 @@ export async function continueCoachingChat(
     .map(m => `${m.role === 'user' ? 'Teacher' : 'Coach'}: ${m.content}`)
     .join('\n\n')
 
-  const prompt = `You are a warm, experienced instructional coach continuing a conversation with a teacher. Here's the context:
+  // Build teacher identity context
+  const teacherIdentity = context.profile?.backstory || context.profile?.superpower
+    ? `
+TEACHER IDENTITY:
+${context.profile.backstory ? `Why they teach: "${context.profile.backstory}"` : ''}
+${context.profile.superpower ? `Their superpower: "${context.profile.superpower}"` : ''}
+`
+    : ''
 
+  const prompt = `You are a warm, experienced instructional coach continuing a conversation with a teacher.
+${teacherIdentity}
 ORIGINAL REFLECTION:
 Domain: ${context.domainName} (${domainContext})
 ${context.skillName ? `Skill focus: ${context.skillName}` : ''}
@@ -165,6 +199,8 @@ Now respond to the teacher's latest message. Keep these guidelines:
 - If they ask "how" questions, give concrete steps
 - If they share concerns, validate and offer alternatives
 - Keep responses concise (2-4 sentences max)
+- If you know their superpower, suggest strategies that leverage their unique strength
+- If you know why they teach, occasionally connect back to their deeper motivation
 
 Respond with JSON:
 {

@@ -7,13 +7,17 @@ interface CoachingRequest {
   primaryResponse: string
   followUpResponse?: string
   skillName?: string
+  profile?: {
+    backstory?: string
+    superpower?: string
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as CoachingRequest
 
-    const { domain, domainName, primaryResponse, followUpResponse, skillName } = body
+    const { domain, domainName, primaryResponse, followUpResponse, skillName, profile } = body
 
     if (!primaryResponse) {
       return NextResponse.json(
@@ -28,6 +32,7 @@ export async function POST(request: NextRequest) {
       primaryResponse,
       followUpResponse,
       skillName,
+      profile,
     })
 
     if (!coaching) {

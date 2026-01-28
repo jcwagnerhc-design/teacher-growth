@@ -17,6 +17,10 @@ interface ChatRequest {
     followUpResponse?: string
     initialInsight: string
     initialStrategy: string
+    profile?: {
+      backstory?: string
+      superpower?: string
+    }
   }
   messages: ChatMessage[]
 }

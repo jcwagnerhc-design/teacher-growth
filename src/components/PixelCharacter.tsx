@@ -8,6 +8,9 @@ export interface CharacterCustomization {
   hairColor: number // 0-7
   outfit: number // 0-5
   accessory: number // 0-4 (0 = none)
+  bodyType: number // 0=androgynous, 1=masculine, 2=feminine
+  facialHair: number // 0-4 (none, stubble, beard, goatee, mustache)
+  makeup: number // 0-3 (none, lipstick, eyeshadow, full glam)
 }
 
 interface PixelCharacterProps {
@@ -123,21 +126,19 @@ export default function PixelCharacter({
         {/* Smile */}
         <rect x="7" y="6" width="2" height="1" fill="#D4A574" />
 
+        {/* Makeup */}
+        <Makeup type={customization.makeup ?? 0} skinColor={skinColor} />
+
         {/* Hair styles */}
         <HairStyle style={customization.hairStyle} color={hairColor} />
 
-        {/* Body/Outfit */}
-        <rect x="5" y="8" width="6" height="7" fill={outfit.primary} />
-        <rect x="4" y="9" width="1" height="5" fill={outfit.primary} />
-        <rect x="11" y="9" width="1" height="5" fill={outfit.primary} />
+        {/* Facial Hair - only for androgynous (0) or masculine (1) */}
+        {(customization.bodyType === 0 || customization.bodyType === 1) && (
+          <FacialHair type={customization.facialHair ?? 0} hairColor={hairColor} />
+        )}
 
-        {/* Outfit details */}
-        <rect x="7" y="8" width="2" height="1" fill={outfit.secondary} />
-        <rect x="7" y="9" width="2" height="4" fill={outfit.secondary} />
-
-        {/* Arms */}
-        <rect x="3" y="9" width="1" height="4" fill={skinColor} />
-        <rect x="12" y="9" width="1" height="4" fill={skinColor} />
+        {/* Body/Outfit with body type variations */}
+        <BodyShape bodyType={customization.bodyType ?? 0} outfitPrimary={outfit.primary} outfitSecondary={outfit.secondary} skinColor={skinColor} />
 
         {/* Legs */}
         <rect x="5" y="15" width="2" height="4" fill="#1E3A5F" />
@@ -261,6 +262,142 @@ function HairStyle({ style, color }: { style: number; color: string }) {
   }
 }
 
+function BodyShape({
+  bodyType,
+  outfitPrimary,
+  outfitSecondary,
+  skinColor,
+}: {
+  bodyType: number
+  outfitPrimary: string
+  outfitSecondary: string
+  skinColor: string
+}) {
+  switch (bodyType) {
+    case 1: // Masculine - wider shoulders, straight torso
+      return (
+        <>
+          {/* Wider shoulders */}
+          <rect x="3" y="8" width="10" height="1" fill={outfitPrimary} />
+          <rect x="4" y="9" width="8" height="6" fill={outfitPrimary} />
+          {/* Outfit details */}
+          <rect x="7" y="8" width="2" height="1" fill={outfitSecondary} />
+          <rect x="7" y="9" width="2" height="4" fill={outfitSecondary} />
+          {/* Arms */}
+          <rect x="2" y="9" width="1" height="4" fill={skinColor} />
+          <rect x="13" y="9" width="1" height="4" fill={skinColor} />
+        </>
+      )
+    case 2: // Feminine - narrower shoulders, tapered waist, wider hips
+      return (
+        <>
+          {/* Narrower shoulders */}
+          <rect x="5" y="8" width="6" height="1" fill={outfitPrimary} />
+          {/* Tapered waist */}
+          <rect x="5" y="9" width="6" height="2" fill={outfitPrimary} />
+          <rect x="6" y="11" width="4" height="1" fill={outfitPrimary} />
+          {/* Wider hips */}
+          <rect x="4" y="12" width="8" height="3" fill={outfitPrimary} />
+          {/* Outfit details */}
+          <rect x="7" y="8" width="2" height="1" fill={outfitSecondary} />
+          <rect x="7" y="9" width="2" height="3" fill={outfitSecondary} />
+          {/* Arms */}
+          <rect x="4" y="9" width="1" height="4" fill={skinColor} />
+          <rect x="11" y="9" width="1" height="4" fill={skinColor} />
+        </>
+      )
+    default: // Androgynous - balanced proportions (original)
+      return (
+        <>
+          {/* Body/Outfit */}
+          <rect x="5" y="8" width="6" height="7" fill={outfitPrimary} />
+          <rect x="4" y="9" width="1" height="5" fill={outfitPrimary} />
+          <rect x="11" y="9" width="1" height="5" fill={outfitPrimary} />
+          {/* Outfit details */}
+          <rect x="7" y="8" width="2" height="1" fill={outfitSecondary} />
+          <rect x="7" y="9" width="2" height="4" fill={outfitSecondary} />
+          {/* Arms */}
+          <rect x="3" y="9" width="1" height="4" fill={skinColor} />
+          <rect x="12" y="9" width="1" height="4" fill={skinColor} />
+        </>
+      )
+  }
+}
+
+function FacialHair({ type, hairColor }: { type: number; hairColor: string }) {
+  const darkColor = adjustColor(hairColor, -40)
+
+  switch (type) {
+    case 1: // Stubble
+      return (
+        <>
+          <rect x="6" y="6" width="1" height="1" fill={darkColor} opacity="0.4" />
+          <rect x="9" y="6" width="1" height="1" fill={darkColor} opacity="0.4" />
+          <rect x="7" y="7" width="2" height="1" fill={darkColor} opacity="0.3" />
+        </>
+      )
+    case 2: // Beard
+      return (
+        <>
+          <rect x="5" y="6" width="1" height="2" fill={darkColor} />
+          <rect x="10" y="6" width="1" height="2" fill={darkColor} />
+          <rect x="6" y="7" width="4" height="2" fill={darkColor} />
+          <rect x="7" y="9" width="2" height="1" fill={darkColor} />
+        </>
+      )
+    case 3: // Goatee
+      return (
+        <>
+          <rect x="7" y="7" width="2" height="2" fill={darkColor} />
+          <rect x="7" y="9" width="2" height="1" fill={darkColor} opacity="0.7" />
+        </>
+      )
+    case 4: // Mustache
+      return (
+        <>
+          <rect x="6" y="6" width="1" height="1" fill={darkColor} />
+          <rect x="9" y="6" width="1" height="1" fill={darkColor} />
+          <rect x="7" y="6" width="2" height="1" fill={darkColor} opacity="0.8" />
+        </>
+      )
+    default:
+      return null
+  }
+}
+
+function Makeup({ type, skinColor }: { type: number; skinColor: string }) {
+  switch (type) {
+    case 1: // Lipstick
+      return (
+        <>
+          <rect x="7" y="6" width="2" height="1" fill="#DC2626" />
+        </>
+      )
+    case 2: // Eyeshadow
+      return (
+        <>
+          <rect x="6" y="3" width="1" height="1" fill="#8B5CF6" opacity="0.6" />
+          <rect x="9" y="3" width="1" height="1" fill="#8B5CF6" opacity="0.6" />
+        </>
+      )
+    case 3: // Full Glam (lips + eyes + blush)
+      return (
+        <>
+          {/* Lipstick */}
+          <rect x="7" y="6" width="2" height="1" fill="#DC2626" />
+          {/* Eyeshadow */}
+          <rect x="6" y="3" width="1" height="1" fill="#EC4899" opacity="0.5" />
+          <rect x="9" y="3" width="1" height="1" fill="#EC4899" opacity="0.5" />
+          {/* Blush */}
+          <rect x="5" y="5" width="1" height="1" fill="#F472B6" opacity="0.4" />
+          <rect x="10" y="5" width="1" height="1" fill="#F472B6" opacity="0.4" />
+        </>
+      )
+    default:
+      return null
+  }
+}
+
 function Accessory({ type }: { type: number }) {
   switch (type) {
     case 1: // Glasses
@@ -338,6 +475,24 @@ export const CHARACTER_OPTIONS = {
     { id: 3, name: 'Bowtie' },
     { id: 4, name: 'Scarf' },
   ],
+  bodyTypes: [
+    { id: 0, name: 'Androgynous' },
+    { id: 1, name: 'Masculine' },
+    { id: 2, name: 'Feminine' },
+  ],
+  facialHairStyles: [
+    { id: 0, name: 'None' },
+    { id: 1, name: 'Stubble' },
+    { id: 2, name: 'Beard' },
+    { id: 3, name: 'Goatee' },
+    { id: 4, name: 'Mustache' },
+  ],
+  makeupStyles: [
+    { id: 0, name: 'None' },
+    { id: 1, name: 'Lipstick' },
+    { id: 2, name: 'Eyeshadow' },
+    { id: 3, name: 'Full Glam' },
+  ],
 }
 
 export const DEFAULT_CHARACTER: CharacterCustomization = {
@@ -346,4 +501,7 @@ export const DEFAULT_CHARACTER: CharacterCustomization = {
   hairColor: 2,
   outfit: 0,
   accessory: 0,
+  bodyType: 0,
+  facialHair: 0,
+  makeup: 0,
 }

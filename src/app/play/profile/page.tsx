@@ -63,6 +63,8 @@ const defaultProfile = {
   character: DEFAULT_CHARACTER,
   mantra: 'listens more than lectures',
   focusAreas: ['questioning', 'engagement'],
+  backstory: '',
+  superpower: '',
 }
 
 export default function ProfilePage() {
@@ -76,7 +78,9 @@ export default function ProfilePage() {
       setProfile({
         ...defaultProfile,
         ...parsed,
-        character: parsed.character || DEFAULT_CHARACTER,
+        character: { ...DEFAULT_CHARACTER, ...parsed.character },
+        backstory: parsed.backstory || '',
+        superpower: parsed.superpower || '',
       })
     }
   }, [])
@@ -173,6 +177,28 @@ export default function ProfilePage() {
               &ldquo;I&apos;m becoming a teacher who {profile.mantra}&rdquo;
             </p>
           </div>
+
+          {/* Superpower */}
+          {profile.superpower && (
+            <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                <p className="text-sm text-yellow-400">Teaching Superpower</p>
+              </div>
+              <p className="text-white">{profile.superpower}</p>
+            </div>
+          )}
+
+          {/* Backstory */}
+          {profile.backstory && (
+            <div className="mt-4 p-4 bg-slate-700/50 border border-slate-600 rounded-xl">
+              <div className="flex items-center gap-2 mb-1">
+                <BookOpen className="w-4 h-4 text-slate-400" />
+                <p className="text-sm text-slate-400">Your Story</p>
+              </div>
+              <p className="text-slate-300 italic text-sm">{profile.backstory}</p>
+            </div>
+          )}
         </motion.div>
 
         {/* Stats Grid */}

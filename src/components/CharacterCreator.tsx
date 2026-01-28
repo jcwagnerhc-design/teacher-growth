@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Palette, Shirt, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Palette, Shirt, Sparkles, User, Smile } from 'lucide-react'
 import PixelCharacter, {
   CharacterCustomization,
   CHARACTER_OPTIONS,
@@ -16,22 +16,27 @@ interface CharacterCreatorProps {
   level?: number
 }
 
-type Category = 'skin' | 'hair' | 'outfit' | 'accessory'
+type Category = 'body' | 'skin' | 'hair' | 'face' | 'outfit' | 'accessory'
 
 export default function CharacterCreator({
   value,
   onChange,
   level = 1,
 }: CharacterCreatorProps) {
-  const [category, setCategory] = useState<Category>('skin')
+  const [category, setCategory] = useState<Category>('body')
 
   const updateValue = (key: keyof CharacterCustomization, val: number) => {
     onChange({ ...value, [key]: val })
   }
 
+  // Check if facial hair should be shown (only for androgynous or masculine body types)
+  const showFacialHair = (value.bodyType ?? 0) === 0 || (value.bodyType ?? 0) === 1
+
   const categories: { id: Category; label: string; icon: typeof Palette }[] = [
+    { id: 'body', label: 'Body', icon: User },
     { id: 'skin', label: 'Skin', icon: Palette },
     { id: 'hair', label: 'Hair', icon: Sparkles },
+    { id: 'face', label: 'Face', icon: Smile },
     { id: 'outfit', label: 'Outfit', icon: Shirt },
     { id: 'accessory', label: 'Extras', icon: Sparkles },
   ]
@@ -78,6 +83,27 @@ export default function CharacterCreator({
 
       {/* Options */}
       <div className="min-h-[120px]">
+        {category === 'body' && (
+          <OptionSection title="Body Type">
+            <div className="flex justify-center gap-2 flex-wrap">
+              {CHARACTER_OPTIONS.bodyTypes.map((bt) => (
+                <button
+                  key={bt.id}
+                  onClick={() => updateValue('bodyType', bt.id)}
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm transition-all',
+                    (value.bodyType ?? 0) === bt.id
+                      ? 'bg-amber-500 text-slate-950'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  )}
+                >
+                  {bt.name}
+                </button>
+              ))}
+            </div>
+          </OptionSection>
+        )}
+
         {category === 'skin' && (
           <OptionSection title="Skin Tone">
             <div className="flex justify-center gap-3">
@@ -136,6 +162,50 @@ export default function CharacterCreator({
                 ))}
               </div>
             </OptionSection>
+          </div>
+        )}
+
+        {category === 'face' && (
+          <div className="space-y-4">
+            <OptionSection title="Makeup">
+              <div className="flex justify-center gap-2 flex-wrap">
+                {CHARACTER_OPTIONS.makeupStyles.map((style) => (
+                  <button
+                    key={style.id}
+                    onClick={() => updateValue('makeup', style.id)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-lg text-sm transition-all',
+                      (value.makeup ?? 0) === style.id
+                        ? 'bg-amber-500 text-slate-950'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    )}
+                  >
+                    {style.name}
+                  </button>
+                ))}
+              </div>
+            </OptionSection>
+
+            {showFacialHair && (
+              <OptionSection title="Facial Hair">
+                <div className="flex justify-center gap-2 flex-wrap">
+                  {CHARACTER_OPTIONS.facialHairStyles.map((style) => (
+                    <button
+                      key={style.id}
+                      onClick={() => updateValue('facialHair', style.id)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg text-sm transition-all',
+                        (value.facialHair ?? 0) === style.id
+                          ? 'bg-amber-500 text-slate-950'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      )}
+                    >
+                      {style.name}
+                    </button>
+                  ))}
+                </div>
+              </OptionSection>
+            )}
           </div>
         )}
 

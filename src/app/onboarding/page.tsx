@@ -15,6 +15,8 @@ import {
   Star,
   User,
   Target,
+  BookOpen,
+  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CharacterCreator, { DEFAULT_CHARACTER } from '@/components/CharacterCreator'
@@ -92,6 +94,15 @@ const SKILL_LEVELS = [
   { value: 4, label: 'Strong', description: 'One of my strengths' },
 ]
 
+const SUPERPOWER_OPTIONS = [
+  "I can explain anything with a metaphor",
+  "I bring energy to even the driest topic",
+  "My patience knows no bounds",
+  "I can connect with any student",
+  "I thrive in organized chaos",
+  "I ignite curiosity in others",
+]
+
 export default function OnboardingPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -100,10 +111,13 @@ export default function OnboardingPage() {
   const [archetype, setArchetype] = useState<string | null>(null)
   const [focusAreas, setFocusAreas] = useState<string[]>([])
   const [skillAssessment, setSkillAssessment] = useState<Record<string, number>>({})
+  const [backstory, setBackstory] = useState('')
+  const [superpower, setSuperpower] = useState('')
+  const [customSuperpower, setCustomSuperpower] = useState('')
   const [mantra, setMantra] = useState('')
 
   const selectedArchetype = ARCHETYPES.find(a => a.id === archetype)
-  const totalSteps = 7 // name, character, archetype, focus, skills, mantra, summary
+  const totalSteps = 9 // name, character, archetype, focus, skills, backstory, superpower, mantra, summary
 
   const toggleFocus = (id: string) => {
     setFocusAreas(prev =>
@@ -124,9 +138,15 @@ export default function OnboardingPage() {
       case 2: return archetype !== null
       case 3: return focusAreas.length >= 1
       case 4: return Object.keys(skillAssessment).length >= 3 // At least 3 skills assessed
-      case 5: return mantra.length >= 10
+      case 5: return backstory.length >= 20 // Min 20 characters for backstory
+      case 6: return superpower !== '' || customSuperpower.length >= 10 // Must select or write superpower
+      case 7: return mantra.length >= 10
       default: return true
     }
+  }
+
+  const getEffectiveSuperpower = () => {
+    return superpower === 'custom' ? customSuperpower : superpower
   }
 
   const handleComplete = () => {
@@ -136,6 +156,8 @@ export default function OnboardingPage() {
       archetype,
       focusAreas,
       skillAssessment,
+      backstory,
+      superpower: getEffectiveSuperpower(),
       mantra,
       createdAt: new Date().toISOString(),
     }))
@@ -144,7 +166,7 @@ export default function OnboardingPage() {
 
   const advance = useCallback(() => {
     if (canProceed()) {
-      if (step < 6) {
+      if (step < 8) {
         setStep(s => s + 1)
       } else {
         handleComplete()
@@ -156,8 +178,8 @@ export default function OnboardingPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
-        // Don't trigger on textarea (mantra step) unless Cmd/Ctrl+Enter
-        if (step === 5 && !(e.metaKey || e.ctrlKey)) {
+        // Don't trigger on textarea (backstory, mantra steps) unless Cmd/Ctrl+Enter
+        if ((step === 5 || step === 7) && !(e.metaKey || e.ctrlKey)) {
           return
         }
         e.preventDefault()
@@ -386,8 +408,107 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {/* Step 5: Mantra */}
+            {/* Step 5: Backstory */}
             {step === 5 && (
+              <motion.div
+                key="backstory"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center"
+              >
+                <BookOpen className="w-12 h-12 text-slate-400 mx-auto mb-6" />
+                <h1 className="text-3xl font-bold mb-2">Your Teaching Story</h1>
+                <p className="text-slate-400 mb-6">
+                  What brought you to teaching?
+                </p>
+
+                <textarea
+                  value={backstory}
+                  onChange={(e) => setBackstory(e.target.value.slice(0, 500))}
+                  placeholder="Share your journey into education..."
+                  className="w-full max-w-md mx-auto block text-lg bg-slate-900/50 border-2 border-slate-800 focus:border-amber-500 rounded-xl outline-none p-4 placeholder:text-slate-600 transition-colors resize-none"
+                  rows={5}
+                  autoFocus
+                />
+                <p className="text-slate-500 text-sm mt-3">
+                  {backstory.length}/500 characters (min 20)
+                </p>
+                <p className="text-slate-600 text-xs mt-2">
+                  Press Cmd+Enter to continue
+                </p>
+              </motion.div>
+            )}
+
+            {/* Step 6: Superpower */}
+            {step === 6 && (
+              <motion.div
+                key="superpower"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <div className="text-center mb-6">
+                  <Zap className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+                  <h1 className="text-3xl font-bold mb-2">Your Teaching Superpower</h1>
+                  <p className="text-slate-400">
+                    What makes you uniquely powerful as a teacher?
+                  </p>
+                </div>
+
+                <div className="space-y-2 max-w-md mx-auto">
+                  {SUPERPOWER_OPTIONS.map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => {
+                        setSuperpower(option)
+                        setCustomSuperpower('')
+                      }}
+                      className={cn(
+                        'w-full p-4 rounded-xl border-2 text-left transition-all',
+                        superpower === option
+                          ? 'bg-yellow-500/10 border-yellow-500/50'
+                          : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                      )}
+                    >
+                      <span className="font-medium">{option}</span>
+                    </button>
+                  ))}
+
+                  {/* Custom option */}
+                  <button
+                    onClick={() => setSuperpower('custom')}
+                    className={cn(
+                      'w-full p-4 rounded-xl border-2 text-left transition-all',
+                      superpower === 'custom'
+                        ? 'bg-yellow-500/10 border-yellow-500/50'
+                        : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
+                    )}
+                  >
+                    <span className="font-medium">Write your own...</span>
+                  </button>
+
+                  {superpower === 'custom' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                    >
+                      <input
+                        type="text"
+                        value={customSuperpower}
+                        onChange={(e) => setCustomSuperpower(e.target.value)}
+                        placeholder="My superpower is..."
+                        className="w-full mt-2 bg-slate-800 border-2 border-slate-700 focus:border-yellow-500 rounded-xl px-4 py-3 outline-none transition-colors"
+                        autoFocus
+                      />
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Step 7: Mantra */}
+            {step === 7 && (
               <motion.div
                 key="mantra"
                 initial={{ opacity: 0, y: 20 }}
@@ -427,8 +548,8 @@ export default function OnboardingPage() {
               </motion.div>
             )}
 
-            {/* Step 6: Summary */}
-            {step === 6 && (
+            {/* Step 8: Summary */}
+            {step === 8 && (
               <motion.div
                 key="summary"
                 initial={{ opacity: 0, y: 20 }}
@@ -448,13 +569,33 @@ export default function OnboardingPage() {
                 <h1 className="text-3xl font-bold mb-2">{name} the {selectedArchetype?.name?.replace('The ', '')}</h1>
                 <p className="text-amber-400 text-lg mb-6">Level 1 Apprentice</p>
 
-                <div className="bg-slate-900/50 rounded-xl p-6 max-w-md mx-auto mb-6 text-left">
+                <div className="bg-slate-900/50 rounded-xl p-6 max-w-md mx-auto mb-4 text-left">
                   <p className="text-slate-400 text-sm mb-1">Growth Mantra</p>
                   <p className="text-lg italic">&ldquo;I&apos;m becoming a teacher who {mantra}&rdquo;</p>
                 </div>
 
+                {/* Superpower */}
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 max-w-md mx-auto mb-4 text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Zap className="w-4 h-4 text-yellow-400" />
+                    <p className="text-yellow-400 text-sm">Teaching Superpower</p>
+                  </div>
+                  <p className="text-white">{getEffectiveSuperpower()}</p>
+                </div>
+
+                {/* Backstory */}
+                {backstory && (
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 max-w-md mx-auto mb-4 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BookOpen className="w-4 h-4 text-slate-400" />
+                      <p className="text-slate-400 text-sm">Your Story</p>
+                    </div>
+                    <p className="text-slate-300 italic text-sm">{backstory}</p>
+                  </div>
+                )}
+
                 {/* Skill Assessment Summary */}
-                <div className="bg-slate-900/50 rounded-xl p-4 max-w-md mx-auto mb-6">
+                <div className="bg-slate-900/50 rounded-xl p-4 max-w-md mx-auto mb-4">
                   <p className="text-slate-400 text-sm mb-3 text-left">Starting Skills</p>
                   <div className="grid grid-cols-2 gap-2 text-left">
                     {Object.entries(skillAssessment).map(([skillId, level]) => {
@@ -513,7 +654,7 @@ export default function OnboardingPage() {
           Back
         </button>
 
-        {step < 6 && (
+        {step < 8 && (
           <button
             onClick={() => setStep(s => s + 1)}
             disabled={!canProceed()}

@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils'
 import PixelCharacter, { DEFAULT_CHARACTER, CharacterCustomization } from '@/components/PixelCharacter'
 import { GoalCard, Goal } from '@/components/goals'
 import { CoachCorner } from '@/components/coaching'
+import { WALL_THEMES, DEFAULT_CLASSROOM, ClassroomCustomization } from '@/types/classroom'
 
 // Demo user ID
 const DEMO_USER_ID = 'demo-user-001'
@@ -281,7 +282,7 @@ interface SkillLogState {
 export default function PlayPage() {
   const router = useRouter()
   const [selectedArea, setSelectedArea] = useState<string | null>(null)
-  const [profile, setProfile] = useState({ character: DEFAULT_CHARACTER, level: 4, name: 'Teacher' })
+  const [profile, setProfile] = useState({ character: DEFAULT_CHARACTER, level: 4, name: 'Teacher', classroom: DEFAULT_CLASSROOM })
   const [characterPosition, setCharacterPosition] = useState({ x: 50, y: 65 })
   const [nearbyArea, setNearbyArea] = useState<string | null>(null)
   const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set())
@@ -305,9 +306,10 @@ export default function PlayPage() {
     if (saved) {
       const parsed = JSON.parse(saved)
       setProfile({
-        character: parsed.character || DEFAULT_CHARACTER,
+        character: { ...DEFAULT_CHARACTER, ...parsed.character },
         level: 4,
         name: parsed.name || 'Teacher',
+        classroom: parsed.classroom || DEFAULT_CLASSROOM,
       })
     }
 
@@ -504,8 +506,16 @@ export default function PlayPage() {
   const skillPrompts = skillLog ? SKILL_PROMPTS[skillLog.skillId] : null
   const skillLogArea = skillLog ? CLASSROOM_AREAS.find(a => a.id === skillLog.areaId) : null
 
+  // Get current wall theme from profile
+  const wallTheme = WALL_THEMES[profile.classroom?.wallColor ?? 0] || WALL_THEMES[0]
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white overflow-hidden">
+    <div
+      className="min-h-screen text-white overflow-hidden"
+      style={{
+        background: `linear-gradient(to bottom, ${wallTheme.primary}, ${wallTheme.secondary}, ${wallTheme.primary})`,
+      }}
+    >
       <FloatingStars />
 
       {/* Header */}
@@ -609,30 +619,41 @@ export default function PlayPage() {
 
       {/* Space Station Classroom View */}
       <div className="relative w-full h-screen">
-        {/* Space station floor */}
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950" />
+        {/* Space station floor - themed */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(to bottom, ${wallTheme.primary}, ${wallTheme.secondary}, ${wallTheme.primary})`,
+          }}
+        />
 
-        {/* Grid floor pattern - space station style */}
+        {/* Grid floor pattern - space station style - themed */}
         <div
           className="absolute inset-0 opacity-30"
           style={{
             backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(74, 123, 168, 0.15) 50px, rgba(74, 123, 168, 0.15) 51px),
-              repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(74, 123, 168, 0.15) 50px, rgba(74, 123, 168, 0.15) 51px)
+              repeating-linear-gradient(0deg, transparent, transparent 50px, ${wallTheme.accent}25 50px, ${wallTheme.accent}25 51px),
+              repeating-linear-gradient(90deg, transparent, transparent 50px, ${wallTheme.accent}25 50px, ${wallTheme.accent}25 51px)
             `,
           }}
         />
 
-        {/* Back Wall */}
-        <div className="absolute top-0 left-0 right-0 h-[20%] bg-gradient-to-b from-[#1e3a5f]/40 to-transparent border-b border-[#4a7ba8]/20" />
+        {/* Back Wall - themed */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[20%] border-b"
+          style={{
+            background: `linear-gradient(to bottom, ${wallTheme.secondary}66 0%, transparent 100%)`,
+            borderColor: `${wallTheme.accent}33`,
+          }}
+        />
 
-        {/* Floor grid pattern */}
+        {/* Floor grid pattern - themed */}
         <div
           className="absolute inset-0 opacity-20"
           style={{
             backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(74, 123, 168, 0.1) 40px, rgba(74, 123, 168, 0.1) 41px),
-              repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(74, 123, 168, 0.1) 40px, rgba(74, 123, 168, 0.1) 41px)
+              repeating-linear-gradient(0deg, transparent, transparent 40px, ${wallTheme.accent}1a 40px, ${wallTheme.accent}1a 41px),
+              repeating-linear-gradient(90deg, transparent, transparent 40px, ${wallTheme.accent}1a 40px, ${wallTheme.accent}1a 41px)
             `,
           }}
         />

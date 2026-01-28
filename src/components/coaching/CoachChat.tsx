@@ -10,6 +10,11 @@ interface ChatMessage {
   content: string
 }
 
+interface TeacherProfile {
+  backstory?: string
+  superpower?: string
+}
+
 interface CoachChatProps {
   context: {
     domain: string
@@ -19,6 +24,7 @@ interface CoachChatProps {
     followUpResponse?: string
     initialInsight: string
     initialStrategy: string
+    profile?: TeacherProfile
   }
   className?: string
 }

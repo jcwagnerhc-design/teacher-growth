@@ -603,7 +603,7 @@ export default function ReflectPage() {
                     <p className="text-white text-sm leading-relaxed">{coaching.insight}</p>
                   </div>
                   <div className="bg-[#2d5a87]/30 rounded-lg p-3 border border-[#4a7ba8]/30">
-                    <p className="text-xs text-[#7db4e0] font-bold mb-1 uppercase tracking-wide">Try Tomorrow</p>
+                    <p className="text-xs text-[#7db4e0] font-bold mb-1 uppercase tracking-wide">Something to Consider</p>
                     <p className="text-white text-sm leading-relaxed">{coaching.strategy}</p>
                   </div>
 

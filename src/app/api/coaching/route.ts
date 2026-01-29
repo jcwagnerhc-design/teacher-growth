@@ -44,8 +44,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       available: true,
-      insight: coaching.insight,
-      strategy: coaching.strategy,
+      // New cognitive coaching format
+      paraphrase: coaching.paraphrase,
+      probe: coaching.probe,
+      // Legacy support (map to old field names for backwards compatibility)
+      insight: coaching.paraphrase,
+      strategy: coaching.probe,
     })
   } catch (error) {
     console.error('Coaching API error:', error)

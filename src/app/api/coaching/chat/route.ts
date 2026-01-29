@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       available: true,
       response: chatResponse.response,
-      suggestions: chatResponse.suggestions,
+      suggestions: chatResponse.followUps,
+      followUps: chatResponse.followUps,
     })
   } catch (error) {
     console.error('Coaching chat API error:', error)

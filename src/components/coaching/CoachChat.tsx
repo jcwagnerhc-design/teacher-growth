@@ -147,7 +147,7 @@ export default function CoachChat({ context, className }: CoachChatProps) {
       >
         <span className="text-sm text-[#7db4e0] font-medium flex items-center gap-2">
           <MessageCircle className="w-4 h-4" />
-          Ask your coach a follow-up...
+          Continue exploring with your coach...
         </span>
         {isExpanded ? (
           <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -171,7 +171,7 @@ export default function CoachChat({ context, className }: CoachChatProps) {
               <div className="max-h-64 overflow-y-auto p-3 space-y-3">
                 {messages.length === 0 ? (
                   <p className="text-sm text-slate-500 text-center py-4">
-                    Ask me anything about your reflection or teaching strategies!
+                    What would you like to explore further? I&apos;m here to help you think it through.
                   </p>
                 ) : (
                   messages.map((msg, i) => (

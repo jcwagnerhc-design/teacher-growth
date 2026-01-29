@@ -10,7 +10,7 @@ import {
   Trophy,
   ChevronDown,
   BookOpen,
-  Sparkles,
+  MessageCircle,
   Rocket,
   TrendingUp,
   Star,
@@ -354,9 +354,9 @@ export default function GoalsPage() {
               <BookOpen className="w-5 h-5" />
               <span className="text-[10px] font-black uppercase tracking-wide">Log</span>
             </button>
-            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
-              <Sparkles className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Journal</span>
+            <button onClick={() => router.push('/play/coach')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
+              <MessageCircle className="w-5 h-5" />
+              <span className="text-[10px] font-black uppercase tracking-wide">Coach</span>
             </button>
             <button className="flex flex-col items-center gap-0.5 text-[#7db4e0] p-2 border-2 border-[#4a7ba8] bg-[#1e3a5f]">
               <Target className="w-5 h-5" />

@@ -12,9 +12,10 @@ import {
   Target,
   BookOpen,
   Rocket,
-  Sparkles,
+  MessageCircle,
   BarChart3,
   Star,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { XpChart, ActivityHeatmap, DomainBreakdown } from '@/components/progress'
@@ -432,6 +433,27 @@ export default function ProgressPage() {
                 )}
               </div>
             </motion.div>
+
+            {/* View Full Journal Link */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <button
+                onClick={() => router.push('/play/journal')}
+                className="w-full flex items-center justify-between p-4 bg-[#0f2744] border-4 border-[#2d4a6f] hover:border-[#4a7ba8] transition-colors"
+                style={{ boxShadow: '4px 4px 0 #0a1628' }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#2d5a87] border-2 border-[#4a7ba8] flex items-center justify-center">
+                    <BookOpen className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-black uppercase tracking-[0.1em]">View Full Journal</span>
+                </div>
+                <span className="text-slate-500 text-sm">See all reflections</span>
+              </button>
+            </motion.div>
           </>
         )}
       </main>
@@ -448,9 +470,9 @@ export default function ProgressPage() {
               <BookOpen className="w-5 h-5" />
               <span className="text-[10px] font-black uppercase tracking-wide">Log</span>
             </button>
-            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
-              <Sparkles className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Journal</span>
+            <button onClick={() => router.push('/play/coach')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
+              <MessageCircle className="w-5 h-5" />
+              <span className="text-[10px] font-black uppercase tracking-wide">Coach</span>
             </button>
             <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#7db4e0] transition-colors p-2">
               <Target className="w-5 h-5" />

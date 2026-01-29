@@ -14,7 +14,7 @@ import {
   Heart,
   Presentation,
   BarChart3,
-  Sparkles,
+  MessageCircle,
   Target,
   Rocket,
   TrendingUp,
@@ -359,9 +359,9 @@ export default function JournalPage() {
               <BookOpen className="w-5 h-5" />
               <span className="text-[10px] font-bold">Log</span>
             </button>
-            <button className="flex flex-col items-center gap-0.5 text-[#7db4e0] p-2 border-2 border-[#4a7ba8] bg-[#1e3a5f]">
-              <Sparkles className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Journal</span>
+            <button onClick={() => router.push('/play/coach')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
+              <MessageCircle className="w-5 h-5" />
+              <span className="text-[10px] font-bold">Coach</span>
             </button>
             <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#7db4e0] transition-colors p-2">
               <Target className="w-5 h-5" />

@@ -9,65 +9,31 @@ import {
   Star,
   X,
   BookOpen,
-  Sparkles,
+  MessageCircle,
   ClipboardList,
   Presentation,
   BarChart3,
   Heart,
   Settings,
   Scroll,
-  Plus,
-  ChevronRight,
-  ChevronLeft,
   Camera,
   Trash2,
   Rocket,
   Target,
   TrendingUp,
+  ChevronRight,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import PixelCharacter, { DEFAULT_CHARACTER, CharacterCustomization } from '@/components/PixelCharacter'
 import { GoalCard, Goal } from '@/components/goals'
 import { CoachCorner } from '@/components/coaching'
-import { WALL_THEMES, DEFAULT_CLASSROOM, ClassroomCustomization } from '@/types/classroom'
+import ClassroomPokemon from '@/components/ClassroomPokemon'
+import CoachRoom from '@/components/CoachRoom'
+import { DEFAULT_CLASSROOM } from '@/types/classroom'
 
 // Demo user ID
 const DEMO_USER_ID = 'demo-user-001'
-
-// Subtle floating stars - reduced count for cleaner look
-const STAR_POSITIONS = [
-  { left: 14.3, top: 60.8, size: 2 }, { left: 51.4, top: 74.9, size: 1 }, { left: 95.7, top: 6.8, size: 2 },
-  { left: 68.8, top: 24.2, size: 1 }, { left: 91.6, top: 26.7, size: 2 }, { left: 33.6, top: 45.6, size: 1 },
-  { left: 39.2, top: 91.5, size: 2 }, { left: 84.2, top: 14.7, size: 1 }, { left: 29.6, top: 91.2, size: 2 },
-  { left: 87.7, top: 11.3, size: 2 }, { left: 65.3, top: 59.3, size: 1 }, { left: 76.8, top: 13.6, size: 2 },
-  { left: 73.1, top: 47.5, size: 1 }, { left: 43.0, top: 45.6, size: 2 }, { left: 55.4, top: 19.0, size: 1 },
-]
-
-const FloatingStars = () => (
-  <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-    {STAR_POSITIONS.map((star, i) => (
-      <motion.div
-        key={i}
-        className="absolute rounded-full bg-white/60"
-        style={{
-          left: `${star.left}%`,
-          top: `${star.top}%`,
-          width: `${star.size}px`,
-          height: `${star.size}px`,
-        }}
-        animate={{
-          opacity: [0.1, 0.5, 0.1],
-        }}
-        transition={{
-          duration: 3 + (i % 3),
-          repeat: Infinity,
-          delay: (i % 5) * 0.3,
-        }}
-      />
-    ))}
-  </div>
-)
 
 // Skill-specific prompts for guided logging
 const SKILL_PROMPTS: Record<string, { primary: string; followUp: string; examples: string[] }> = {
@@ -162,12 +128,12 @@ const SKILL_PROMPTS: Record<string, { primary: string; followUp: string; example
   },
 }
 
-// Interaction zones for each area (x, y in percentages, with radius)
-const INTERACTION_ZONES = {
-  planning: { x: 88, y: 62, radius: 12, label: 'Teacher Desk' },
-  environment: { x: 50, y: 57, radius: 18, label: 'Discussion Table' },
-  instruction: { x: 50, y: 28, radius: 14, label: 'Teaching Space' },
-  assessment: { x: 12, y: 42, radius: 12, label: 'Student Work' },
+// Area names for the raycaster
+const AREA_NAMES: Record<string, string> = {
+  planning: 'Teacher Desk',
+  environment: 'Discussion Table',
+  instruction: 'Teaching Space',
+  assessment: 'Student Work',
 }
 
 // Classroom areas based on Danielson Framework - with teacher-friendly names (Blair Academy colors)
@@ -259,16 +225,6 @@ const CLASSROOM_AREAS = [
   },
 ]
 
-// Movement boundaries (percentages)
-const BOUNDS = {
-  minX: 8,
-  maxX: 92,
-  minY: 28,
-  maxY: 88,
-}
-
-const MOVE_SPEED = 2
-
 interface SkillLogState {
   skillId: string
   skillName: string
@@ -283,9 +239,6 @@ export default function PlayPage() {
   const router = useRouter()
   const [selectedArea, setSelectedArea] = useState<string | null>(null)
   const [profile, setProfile] = useState({ character: DEFAULT_CHARACTER, level: 4, name: 'Teacher', classroom: DEFAULT_CLASSROOM })
-  const [characterPosition, setCharacterPosition] = useState({ x: 50, y: 65 })
-  const [nearbyArea, setNearbyArea] = useState<string | null>(null)
-  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set())
   const [recentGrowth, setRecentGrowth] = useState<Record<string, number>>({})
   const [showGrowthIndicators, setShowGrowthIndicators] = useState(false)
 
@@ -299,6 +252,13 @@ export default function PlayPage() {
   // Goals state
   const [activeGoals, setActiveGoals] = useState<Goal[]>([])
   const [goalsExpanded, setGoalsExpanded] = useState(false)
+
+  // Room state (classroom or coach office)
+  const [currentRoom, setCurrentRoom] = useState<'classroom' | 'coach'>('classroom')
+  const [roomTransition, setRoomTransition] = useState(false)
+
+  // Raycaster dimensions (responsive)
+  const [raycasterWidth, setRaycasterWidth] = useState(640)
 
   // Load profile and check for recent growth
   useEffect(() => {
@@ -338,87 +298,40 @@ export default function PlayPage() {
     fetchGoals()
   }, [])
 
-  // Check if character is near any interaction zone
-  const checkNearbyArea = useCallback((pos: { x: number; y: number }) => {
-    for (const [areaId, zone] of Object.entries(INTERACTION_ZONES)) {
-      const distance = Math.sqrt(
-        Math.pow(pos.x - zone.x, 2) + Math.pow(pos.y - zone.y, 2)
-      )
-      if (distance < zone.radius) {
-        return areaId
-      }
+  // Handle area selection from raycaster
+  const handleAreaSelect = useCallback((areaId: string) => {
+    if (areaId === 'coach') {
+      // Transition to coach room
+      setRoomTransition(true)
+      setTimeout(() => {
+        setCurrentRoom('coach')
+        setRoomTransition(false)
+      }, 400)
+      return
     }
-    return null
+    if (!skillLog) {
+      setSelectedArea(areaId)
+    }
+  }, [skillLog])
+
+  // Handle exiting coach room
+  const handleExitCoachRoom = useCallback(() => {
+    setRoomTransition(true)
+    setTimeout(() => {
+      setCurrentRoom('classroom')
+      setRoomTransition(false)
+    }, 400)
   }, [])
 
-  // Handle keyboard input
+  // Handle window resize for raycaster
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if modal is open or typing in input
-      if (selectedArea || skillLog || e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return
-      }
-
-      const key = e.key.toLowerCase()
-
-      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
-        e.preventDefault()
-        setKeysPressed(prev => new Set(prev).add(key))
-      }
-
-      if ((key === ' ' || key === 'enter') && nearbyArea) {
-        e.preventDefault()
-        setSelectedArea(nearbyArea)
-      }
+    const handleResize = () => {
+      setRaycasterWidth(Math.min(800, window.innerWidth - 32))
     }
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase()
-      setKeysPressed(prev => {
-        const next = new Set(prev)
-        next.delete(key)
-        return next
-      })
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [selectedArea, nearbyArea, skillLog])
-
-  // Game loop for smooth movement
-  useEffect(() => {
-    if (keysPressed.size === 0 || selectedArea || skillLog) return
-
-    const moveInterval = setInterval(() => {
-      setCharacterPosition(prev => {
-        let { x, y } = prev
-
-        if (keysPressed.has('w') || keysPressed.has('arrowup')) y -= MOVE_SPEED
-        if (keysPressed.has('s') || keysPressed.has('arrowdown')) y += MOVE_SPEED
-        if (keysPressed.has('a') || keysPressed.has('arrowleft')) x -= MOVE_SPEED
-        if (keysPressed.has('d') || keysPressed.has('arrowright')) x += MOVE_SPEED
-
-        x = Math.max(BOUNDS.minX, Math.min(BOUNDS.maxX, x))
-        y = Math.max(BOUNDS.minY, Math.min(BOUNDS.maxY, y))
-
-        const newPos = { x, y }
-        const nearby = checkNearbyArea(newPos)
-        setNearbyArea(nearby)
-
-        return newPos
-      })
-    }, 16)
-
-    return () => clearInterval(moveInterval)
-  }, [keysPressed, selectedArea, skillLog, checkNearbyArea])
-
-  useEffect(() => {
-    setNearbyArea(checkNearbyArea(characterPosition))
-  }, [characterPosition, checkNearbyArea])
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // Start logging a skill
   const startSkillLog = (skillId: string, skillName: string, areaId: string) => {
@@ -502,21 +415,11 @@ export default function PlayPage() {
 
   const area = CLASSROOM_AREAS.find(a => a.id === selectedArea)
   const totalXp = CLASSROOM_AREAS.reduce((sum, a) => sum + a.xp, 0)
-  const nearbyAreaData = nearbyArea ? CLASSROOM_AREAS.find(a => a.id === nearbyArea) : null
   const skillPrompts = skillLog ? SKILL_PROMPTS[skillLog.skillId] : null
   const skillLogArea = skillLog ? CLASSROOM_AREAS.find(a => a.id === skillLog.areaId) : null
 
-  // Get current wall theme from profile
-  const wallTheme = WALL_THEMES[profile.classroom?.wallColor ?? 0] || WALL_THEMES[0]
-
   return (
-    <div
-      className="min-h-screen text-white overflow-hidden"
-      style={{
-        background: `linear-gradient(to bottom, ${wallTheme.primary}, ${wallTheme.secondary}, ${wallTheme.primary})`,
-      }}
-    >
-      <FloatingStars />
+    <div className="min-h-screen text-white overflow-hidden bg-[#0a1628] flex flex-col">
 
       {/* Header */}
       <header className="absolute top-0 left-0 right-0 z-30 p-4">
@@ -612,326 +515,98 @@ export default function PlayPage() {
         </motion.div>
       </div>
 
-      {/* Coach's Corner - Floating Panel */}
-      <div className="absolute top-20 right-4 z-20 max-w-xs w-72">
-        <CoachCorner userId={DEMO_USER_ID} defaultExpanded={false} />
-      </div>
-
-      {/* Space Station Classroom View */}
-      <div className="relative w-full h-screen">
-        {/* Space station floor - themed */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(to bottom, ${wallTheme.primary}, ${wallTheme.secondary}, ${wallTheme.primary})`,
-          }}
-        />
-
-        {/* Grid floor pattern - space station style - themed */}
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 50px, ${wallTheme.accent}25 50px, ${wallTheme.accent}25 51px),
-              repeating-linear-gradient(90deg, transparent, transparent 50px, ${wallTheme.accent}25 50px, ${wallTheme.accent}25 51px)
-            `,
-          }}
-        />
-
-        {/* Back Wall - themed */}
-        <div
-          className="absolute top-0 left-0 right-0 h-[20%] border-b"
-          style={{
-            background: `linear-gradient(to bottom, ${wallTheme.secondary}66 0%, transparent 100%)`,
-            borderColor: `${wallTheme.accent}33`,
-          }}
-        />
-
-        {/* Floor grid pattern - themed */}
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `
-              repeating-linear-gradient(0deg, transparent, transparent 40px, ${wallTheme.accent}1a 40px, ${wallTheme.accent}1a 41px),
-              repeating-linear-gradient(90deg, transparent, transparent 40px, ${wallTheme.accent}1a 40px, ${wallTheme.accent}1a 41px)
-            `,
-          }}
-        />
-
-        {/* Classroom Posters - Front Wall */}
-        <div className="absolute top-[4%] left-[8%] w-14 h-18 bg-[#2d5a87] rounded-lg shadow-lg border-2 border-[#4a7ba8] flex flex-col items-center justify-center p-2">
-          <Rocket className="w-5 h-5 text-[#7db4e0] mb-1" />
-          <span className="text-[6px] text-[#7db4e0] font-bold text-center uppercase leading-tight">Aim High</span>
+      {/* Coach's Corner - Floating Panel (hidden when in coach room) */}
+      {currentRoom === 'classroom' && (
+        <div className="absolute top-20 right-4 z-20 max-w-xs w-72">
+          <CoachCorner userId={DEMO_USER_ID} defaultExpanded={false} />
         </div>
-        <div className="absolute top-[6%] right-[10%] w-16 h-14 bg-slate-800 rounded-lg shadow-lg border-2 border-[#6b7280] flex flex-col items-center justify-center p-2">
-          <Star className="w-5 h-5 text-[#c0c0c0] mb-1" />
-          <span className="text-[6px] text-[#c0c0c0] font-bold text-center uppercase leading-tight">Keep Growing</span>
-        </div>
+      )}
 
-        {/* Clock */}
-        <div className="absolute top-[5%] right-[22%] w-8 h-8 bg-slate-100 rounded-full border-3 border-amber-700 shadow-md flex items-center justify-center">
-          <div className="w-0.5 h-2.5 bg-slate-800 absolute origin-bottom rotate-45" style={{ bottom: '50%' }} />
-          <div className="w-0.5 h-1.5 bg-slate-800 absolute origin-bottom -rotate-12" style={{ bottom: '50%' }} />
-        </div>
-
-        {/* Window */}
-        <div className="absolute top-[4%] left-[22%] w-10 h-16 bg-sky-200 rounded border-3 border-slate-500 shadow-inner">
-          <div className="absolute inset-0 bg-gradient-to-b from-yellow-100/30 to-transparent" />
-          <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-400" />
-          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-slate-400" />
-        </div>
-
-        {/* Bookshelf */}
-        <div className="absolute top-[32%] right-[4%] w-8 h-20 bg-amber-800 rounded border-2 border-amber-900 shadow-md">
-          <div className="h-1/3 border-b border-amber-900 flex items-center justify-center gap-0.5 px-1">
-            <div className="w-2 h-4 bg-blue-800 rounded-sm" />
-            <div className="w-2 h-3 bg-red-800 rounded-sm" />
-          </div>
-          <div className="h-1/3 border-b border-amber-900 flex items-center justify-center gap-0.5 px-1">
-            <div className="w-3 h-3 bg-emerald-800 rounded-sm" />
-            <div className="w-2 h-4 bg-purple-800 rounded-sm" />
-          </div>
-          <div className="h-1/3 flex items-center justify-center">
-            <div className="w-4 h-3 bg-amber-600 rounded-sm" />
-          </div>
-        </div>
-
-        {/* Plant */}
-        <div className="absolute top-[55%] right-[4%]">
-          <div className="w-6 h-4 bg-amber-600 rounded-t border border-amber-700" />
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-            <div className="w-2 h-4 bg-emerald-500 rounded-full transform -rotate-12" />
-            <div className="w-2 h-4 bg-emerald-600 rounded-full transform rotate-12 -mt-2 ml-1" />
-          </div>
-        </div>
-
-        {/* Student Work Wall - Bulletin Board */}
-        <div className={cn(
-          'absolute top-[35%] left-[5%] transition-all duration-300',
-          nearbyArea === 'assessment' && 'scale-105'
-        )}>
-          {showGrowthIndicators && recentGrowth['assessment'] && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#6b7280] rounded-full text-sm font-bold whitespace-nowrap z-10"
-            >
-              +{recentGrowth['assessment']} XP
-            </motion.div>
-          )}
-          {/* Bulletin board */}
-          <div className={cn(
-            'w-24 h-28 bg-amber-100 rounded-lg border-4 shadow-lg relative transition-all',
-            nearbyArea === 'assessment' ? 'border-[#9ca3af] shadow-xl' : 'border-amber-700'
-          )}>
-            {/* Pinned papers */}
-            <div className="absolute top-2 left-2 w-8 h-10 bg-white rounded-sm shadow-sm transform -rotate-2" />
-            <div className="absolute top-3 right-2 w-8 h-8 bg-yellow-200 rounded-sm shadow-sm transform rotate-3" />
-            <div className="absolute bottom-3 left-3 w-9 h-8 bg-white rounded-sm shadow-sm transform rotate-1" />
-            <div className="absolute bottom-2 right-3 w-7 h-7 bg-blue-100 rounded-sm shadow-sm transform -rotate-2" />
-            {/* Star sticker */}
-            <Star className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-yellow-500 fill-yellow-400" />
-          </div>
-          {/* Label */}
-          <div className={cn(
-            'absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
-            'bg-slate-900/80 backdrop-blur-sm',
-            nearbyArea === 'assessment' && 'scale-105'
-          )}>
-            <span className="text-xs font-medium text-[#c0c0c0]">Student Work</span>
-          </div>
-        </div>
-
-        {/* Discussion Table - Class Community */}
-        <div className={cn(
-          'absolute top-[50%] left-1/2 -translate-x-1/2 transition-all duration-300',
-          nearbyArea === 'environment' && 'scale-105'
-        )}>
-          {showGrowthIndicators && recentGrowth['environment'] && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-12 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#1e3a5f] rounded-full text-sm font-bold whitespace-nowrap z-10"
-            >
-              +{recentGrowth['environment']} XP
-            </motion.div>
-          )}
-          {/* Rug under table */}
-          <div className="absolute -inset-6 bg-[#1e3a5f]/10 rounded-full -z-10" />
-          {/* Oval discussion table */}
-          <div className={cn(
-            'w-36 h-24 rounded-[50%] bg-amber-700 border-4 shadow-lg transition-all relative',
-            nearbyArea === 'environment' ? 'border-[#4a7ba8] shadow-xl' : 'border-amber-900'
-          )}>
-            {/* Wood grain detail */}
-            <div className="absolute inset-2 rounded-[50%] border border-amber-600/30" />
-            {/* Chairs around the table */}
-            {/* Top chairs */}
-            <div className="absolute -top-2 left-1/4 w-4 h-3 bg-slate-600 rounded-t border border-slate-700" />
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-3 bg-slate-600 rounded-t border border-slate-700" />
-            <div className="absolute -top-2 right-1/4 w-4 h-3 bg-slate-600 rounded-t border border-slate-700" />
-            {/* Bottom chairs */}
-            <div className="absolute -bottom-2 left-1/4 w-4 h-3 bg-slate-600 rounded-b border border-slate-700" />
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-3 bg-slate-600 rounded-b border border-slate-700" />
-            <div className="absolute -bottom-2 right-1/4 w-4 h-3 bg-slate-600 rounded-b border border-slate-700" />
-            {/* Side chairs */}
-            <div className="absolute top-1/3 -left-2 w-3 h-4 bg-slate-600 rounded-l border border-slate-700" />
-            <div className="absolute top-1/2 -left-2 w-3 h-4 bg-slate-600 rounded-l border border-slate-700" />
-            <div className="absolute top-1/3 -right-2 w-3 h-4 bg-slate-600 rounded-r border border-slate-700" />
-            <div className="absolute top-1/2 -right-2 w-3 h-4 bg-slate-600 rounded-r border border-slate-700" />
-          </div>
-          {/* Label */}
-          <div className={cn(
-            'absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
-            'bg-slate-900/80 backdrop-blur-sm',
-            nearbyArea === 'environment' && 'scale-105'
-          )}>
-            <span className="text-xs font-medium text-[#6ba3d6]">Discussion Table</span>
-          </div>
-        </div>
-
-        {/* Teaching Space - Whiteboard (on wall) */}
-        <div className={cn(
-          'absolute top-[4%] left-1/2 -translate-x-1/2 transition-all duration-300',
-          nearbyArea === 'instruction' && 'scale-105'
-        )}>
-          {showGrowthIndicators && recentGrowth['instruction'] && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-6 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#4a7ba8] rounded-full text-sm font-bold whitespace-nowrap z-10"
-            >
-              +{recentGrowth['instruction']} XP
-            </motion.div>
-          )}
-          {/* Whiteboard */}
-          <div className={cn(
-            'w-56 h-28 bg-slate-100 rounded-lg border-6 shadow-xl relative transition-all',
-            nearbyArea === 'instruction' ? 'border-[#6ba3d6] shadow-2xl' : 'border-slate-400'
-          )}>
-            {/* Writing on board */}
-            <div className="p-3">
-              <div className="w-24 h-2 bg-blue-400/50 rounded mb-2" />
-              <div className="w-36 h-1.5 bg-slate-300 rounded mb-1.5" />
-              <div className="w-32 h-1.5 bg-slate-300 rounded mb-1.5" />
-              <div className="w-28 h-1.5 bg-slate-300 rounded" />
-            </div>
-            {/* Marker tray */}
-            <div className="absolute -bottom-2 left-1/4 right-1/4 h-3 bg-slate-300 rounded-b flex items-center justify-center gap-2">
-              <div className="w-6 h-2 bg-blue-600 rounded-full" />
-              <div className="w-6 h-2 bg-red-600 rounded-full" />
-              <div className="w-6 h-2 bg-green-600 rounded-full" />
-            </div>
-          </div>
-          {/* Label */}
-          <div className={cn(
-            'absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
-            'bg-slate-900/80 backdrop-blur-sm',
-            nearbyArea === 'instruction' && 'scale-105'
-          )}>
-            <span className="text-xs font-medium text-[#a0c4e8]">Teaching Space</span>
-          </div>
-        </div>
-
-        {/* Teacher's Desk - Planning */}
-        <div className={cn(
-          'absolute top-[55%] right-[8%] transition-all duration-300',
-          nearbyArea === 'planning' && 'scale-105'
-        )}>
-          {showGrowthIndicators && recentGrowth['planning'] && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-[#2d5a87] rounded-full text-sm font-bold whitespace-nowrap z-10"
-            >
-              +{recentGrowth['planning']} XP
-            </motion.div>
-          )}
-          {/* Teacher desk */}
-          <div className={cn(
-            'w-28 h-18 bg-amber-700 rounded-lg border-2 shadow-lg relative transition-all',
-            nearbyArea === 'planning' ? 'border-[#4a7ba8] shadow-xl' : 'border-amber-900'
-          )}>
-            {/* Laptop */}
-            <div className="absolute top-1.5 left-2 w-10 h-7 bg-slate-700 rounded-t border border-slate-600">
-              <div className="w-full h-5 bg-slate-800 rounded-t flex items-center justify-center">
-                <div className="w-6 h-3 bg-blue-400/30 rounded" />
-              </div>
-            </div>
-            {/* Coffee mug */}
-            <div className="absolute top-2 right-2 w-4 h-5 bg-rose-400 rounded-b border border-rose-500" />
-            {/* Papers */}
-            <div className="absolute bottom-1.5 left-3 w-8 h-5 bg-white rounded-sm shadow-sm" />
-            <div className="absolute bottom-2 left-4 w-8 h-5 bg-yellow-100 rounded-sm shadow-sm" />
-          </div>
-          {/* Chair */}
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-5 bg-slate-600 rounded-t border border-slate-700" />
-          {/* Label */}
-          <div className={cn(
-            'absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg transition-all whitespace-nowrap text-center',
-            'bg-slate-900/80 backdrop-blur-sm',
-            nearbyArea === 'planning' && 'scale-105'
-          )}>
-            <span className="text-xs font-medium text-[#7db4e0]">Teacher Desk</span>
-          </div>
-        </div>
-
-
-        {/* Player Character */}
-        <motion.div
-          animate={{ left: `${characterPosition.x}%`, top: `${characterPosition.y}%` }}
-          transition={{ type: 'tween', duration: 0.05 }}
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20"
-        >
-          <PixelCharacter customization={profile.character as CharacterCustomization} level={profile.level} size="lg" />
-        </motion.div>
-
-        {/* Interaction prompt */}
+      {/* Room View with Transition */}
+      <div className="relative w-full flex-1 flex items-center justify-center pt-4 pb-20">
+        {/* Transition overlay */}
         <AnimatePresence>
-          {nearbyArea && nearbyAreaData && !selectedArea && !skillLog && (
+          {roomTransition && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="absolute bottom-28 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-sm rounded-xl px-4 py-3 border border-slate-700 z-25"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute inset-0 bg-black z-40"
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait">
+          {currentRoom === 'classroom' ? (
+            <motion.div
+              key="classroom"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
-              <p className="text-center text-sm">
-                Press <kbd className="px-2 py-1 bg-slate-700 rounded text-xs mx-1">SPACE</kbd> to explore
-              </p>
-              <p className={cn('text-center text-xs mt-1', nearbyAreaData.textColor)}>{nearbyAreaData.name}</p>
+              <ClassroomPokemon
+                onAreaSelect={handleAreaSelect}
+                onEnterDoor={() => {
+                  setRoomTransition(true)
+                  setTimeout(() => {
+                    setCurrentRoom('coach')
+                    setRoomTransition(false)
+                  }, 400)
+                }}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="coach"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CoachRoom onExit={handleExitCoachRoom} />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Controls hint - minimal */}
-        <div className="absolute bottom-20 left-4 text-[10px] text-slate-500">
-          <span>Use arrow keys or WASD to move</span>
-        </div>
+        {/* XP Growth Indicators */}
+        {showGrowthIndicators && Object.entries(recentGrowth).map(([areaId, xp]) => (
+          <motion.div
+            key={areaId}
+            initial={{ opacity: 0, y: 20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-[#2d5a87] rounded-lg text-lg font-bold z-10 border-2 border-[#4a7ba8]"
+          >
+            +{xp} XP - {AREA_NAMES[areaId] || areaId}
+          </motion.div>
+        ))}
       </div>
 
       {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-lg border-t border-slate-800 z-30">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-around py-2">
-            <button className="flex flex-col items-center gap-0.5 text-white">
-              <Rocket className="w-5 h-5" />
-              <span className="text-[10px] font-medium">Base</span>
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-950 border-t-2 border-slate-700 z-30">
+        <div className="max-w-4xl mx-auto px-2">
+          <div className="flex items-center justify-around py-3">
+            <button className="flex flex-col items-center gap-1 text-white px-4 py-2 rounded-lg bg-slate-800">
+              <Rocket className="w-7 h-7" />
+              <span className="text-sm font-bold">Base</span>
             </button>
-            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
-              <BookOpen className="w-5 h-5" />
-              <span className="text-[10px]">Log</span>
+            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-slate-800">
+              <BookOpen className="w-7 h-7" />
+              <span className="text-sm font-medium">Log</span>
             </button>
-            <button onClick={() => router.push('/play/journal')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
-              <Sparkles className="w-5 h-5" />
-              <span className="text-[10px]">Journal</span>
+            <button onClick={() => router.push('/play/coach')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-slate-800">
+              <MessageCircle className="w-7 h-7" />
+              <span className="text-sm font-medium">Coach</span>
             </button>
-            <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
-              <Target className="w-5 h-5" />
-              <span className="text-[10px]">Goals</span>
+            <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-slate-800">
+              <Target className="w-7 h-7" />
+              <span className="text-sm font-medium">Goals</span>
             </button>
-            <button onClick={() => router.push('/play/progress')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-white transition-colors">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-[10px]">Progress</span>
+            <button onClick={() => router.push('/play/progress')} className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-slate-800">
+              <TrendingUp className="w-7 h-7" />
+              <span className="text-sm font-medium">Progress</span>
             </button>
           </div>
         </div>

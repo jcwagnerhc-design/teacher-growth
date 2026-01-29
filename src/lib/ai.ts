@@ -19,8 +19,8 @@ interface CoachingInput {
 }
 
 interface CoachingResponse {
-  insight: string
-  strategy: string
+  paraphrase: string
+  probe: string
 }
 
 const DOMAIN_CONTEXT: Record<string, string> = {
@@ -47,7 +47,9 @@ ${input.profile.superpower ? `Their superpower: "${input.profile.superpower}"` :
 `
     : ''
 
-  const prompt = `You are a warm, experienced instructional coach helping a teacher reflect on their practice.
+  const prompt = `You are a cognitive coach helping a teacher deepen their thinking about their practice.
+
+Your role is to help teachers discover their own insights - not to give advice.
 ${teacherIdentity}
 They just logged this reflection:
 
@@ -57,18 +59,18 @@ ${input.skillName ? `Skill focus: ${input.skillName}` : ''}
 What happened: "${input.primaryResponse}"
 ${input.followUpResponse ? `Their reflection: "${input.followUpResponse}"` : ''}
 
-Respond with exactly two parts in this JSON format:
+Respond with JSON:
 {
-  "insight": "A brief (1-2 sentence) observation that validates something specific they did or noticed. Be warm but not generic - reference their actual words.",
-  "strategy": "One concrete, actionable strategy they could try tomorrow. Be specific and practical, not abstract."
+  "paraphrase": "A 1-sentence paraphrase that captures the essence of what they shared. Start with 'So...' or 'It sounds like...' to show you heard them.",
+  "probe": "One thoughtful question that helps them think deeper. Focus on: What did they notice? What assumptions are they making? What might they try differently? What does this tell them about their students or themselves?"
 }
 
 Guidelines:
-- Keep the total response under 80 words
-- Be encouraging but substantive - no generic praise like "Great job!"
-- Be specific to what they shared
-- If you know their superpower, suggest strategies that leverage it
-- If you know why they teach, connect your encouragement to their deeper motivation when relevant
+- Do NOT give advice or strategies
+- Your question should help them discover their own insight
+- Reference their specific words
+- Foster their sense of efficacy ("you figured this out") and consciousness ("what did you notice about yourself?")
+- Keep the total response under 60 words
 
 Return ONLY the JSON, no other text.`
 
@@ -84,8 +86,8 @@ Return ONLY the JSON, no other text.`
 
     const parsed = JSON.parse(jsonMatch[0])
     return {
-      insight: parsed.insight || '',
-      strategy: parsed.strategy || '',
+      paraphrase: parsed.paraphrase || '',
+      probe: parsed.probe || '',
     }
   } catch (error) {
     console.error('AI coaching error:', error)
@@ -150,7 +152,7 @@ interface ChatContext {
 
 interface ChatResponse {
   response: string
-  suggestions: string[]
+  followUps: string[]
 }
 
 export async function continueCoachingChat(
@@ -178,7 +180,9 @@ ${context.profile.superpower ? `Their superpower: "${context.profile.superpower}
 `
     : ''
 
-  const prompt = `You are a warm, experienced instructional coach continuing a conversation with a teacher.
+  const prompt = `You are a cognitive coach in an ongoing conversation with a teacher.
+
+Your role: Help them think, don't think for them. Use pausing, paraphrasing, and probing.
 ${teacherIdentity}
 ORIGINAL REFLECTION:
 Domain: ${context.domainName} (${domainContext})
@@ -187,28 +191,32 @@ What happened: "${context.primaryResponse}"
 ${context.followUpResponse ? `Their reflection: "${context.followUpResponse}"` : ''}
 
 INITIAL COACHING:
-Insight: "${context.initialInsight}"
-Strategy: "${context.initialStrategy}"
+Paraphrase: "${context.initialInsight}"
+Probe: "${context.initialStrategy}"
 
 CONVERSATION SO FAR:
 ${conversationHistory}
 
-Now respond to the teacher's latest message. Keep these guidelines:
-- Be warm, supportive, and specific to their situation
-- Offer practical, actionable advice they can use tomorrow
-- If they ask "how" questions, give concrete steps
-- If they share concerns, validate and offer alternatives
-- Keep responses concise (2-4 sentences max)
-- If you know their superpower, suggest strategies that leverage their unique strength
-- If you know why they teach, occasionally connect back to their deeper motivation
+Respond to their latest message:
+
+If they're sharing or exploring:
+- Paraphrase what you heard
+- Ask a probing question to go deeper
+- Do NOT give advice unless they explicitly ask "what should I do?" or "do you have suggestions?"
+
+If they explicitly ask for a strategy or advice:
+- Offer ONE concrete, actionable idea
+- Then ask: "What feels doable about that?" or "How might you adapt that for your context?"
 
 Respond with JSON:
 {
-  "response": "Your coaching response here",
-  "suggestions": ["Follow-up question 1?", "Follow-up question 2?", "Follow-up question 3?"]
+  "response": "Your coaching response",
+  "followUps": ["Question they might ask 1?", "Question 2?", "Question 3?"]
 }
 
-The suggestions should be natural follow-up questions the teacher might want to ask based on your response. Make them specific to the conversation context. Return ONLY the JSON.`
+Keep responses concise (2-3 sentences). Foster their sense of craftsmanship (attention to their craft) and flexibility (multiple perspectives).
+
+Return ONLY the JSON.`
 
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
@@ -222,7 +230,7 @@ The suggestions should be natural follow-up questions the teacher might want to 
     const parsed = JSON.parse(jsonMatch[0])
     return {
       response: parsed.response || '',
-      suggestions: parsed.suggestions || [],
+      followUps: parsed.followUps || parsed.suggestions || [],
     }
   } catch (error) {
     console.error('Coaching chat error:', error)
@@ -307,7 +315,7 @@ export async function getDashboardInsights(
     .filter(d => !domainLastReflection[d] || domainLastReflection[d] >= 7)
     .map(d => `${d} (${domainLastReflection[d] ? `${domainLastReflection[d]} days` : 'never'})`)
 
-  const prompt = `You are an instructional coach providing personalized dashboard insights for a teacher.
+  const prompt = `You are a cognitive coach reviewing a teacher's reflection patterns.
 
 RECENT REFLECTIONS (last 10):
 ${reflectionSummary || 'No reflections yet'}
@@ -320,24 +328,25 @@ CURRENT STREAK: ${context.streak} day(s)
 NEGLECTED AREAS (7+ days):
 ${domainGaps.length > 0 ? domainGaps.join(', ') : 'None - great coverage!'}
 
-Analyze this data and respond with JSON:
+Instead of telling them what you notice, invite them to notice:
+
+Respond with JSON:
 {
-  "patternInsight": "A warm, specific observation about their teaching patterns (1-2 sentences). Reference their actual reflections. Start with 'Looking at your reflections...' or 'I notice...'",
-  "goalNudge": "A brief, encouraging message about their goal progress, or null if no goals. Be specific about numbers.",
+  "patternInsight": "A question that helps them see a pattern. E.g., 'I see you've reflected on questioning 4 times this month. What draws you to that area?' or 'Your reflections mention student engagement often. What are you learning about what works?'",
+  "goalNudge": "A brief acknowledgment of goal progress with a curious question, or null if no goals. E.g., 'You're at 3/5 on your questioning goal. What's been most challenging so far?'",
   "suggestedFocus": {
     "domain": "one of: planning, environment, instruction, assessment",
     "skill": "optional specific skill like 'questioning' or 'feedback'",
-    "reason": "Brief explanation of why this area (1 sentence)"
+    "reason": "An invitation, not a directive. E.g., 'You haven't reflected on assessment in a while. Curious what's happening there?' NOT 'You should focus on assessment.'"
   },
-  "streakMessage": "A brief streak encouragement, or null if streak is 0"
+  "streakMessage": "Brief acknowledgment of streak if applicable. Focus on their consistency, not generic praise. Null if streak is 0."
 }
 
 Guidelines:
-- Be warm and encouraging, not generic
+- Ask questions rather than make statements
+- Foster their sense of consciousness (help them notice their own patterns)
 - Reference specific things from their reflections
-- If suggesting a focus area, explain WHY based on their data
 - Keep everything concise
-- For streakMessage, celebrate milestones (5, 10, 20, etc.)
 
 Return ONLY the JSON.`
 
@@ -474,7 +483,7 @@ The teacher hasn't selected a focus yet. Suggest the best domain/skill based on:
 3. Recent reflection themes (build on momentum)`
   }
 
-  const prompt = `You are an instructional coach helping a teacher decide what to reflect on today.
+  const prompt = `You are a cognitive coach helping a teacher choose a reflection focus.
 
 TEACHER'S RECENT REFLECTIONS:
 ${reflectionContext || 'No recent reflections'}
@@ -487,23 +496,25 @@ ${gapInfo}
 
 ${specificPrompt}
 
+Your job is to INVITE, not prescribe. Teachers know what they need to think about.
+
 Respond with JSON:
 {
   "suggestedFocus": ${context.selectedDomain && context.selectedSkill ? 'null' : `{
     "domain": "planning|environment|instruction|assessment",
     "skill": "specific skill id like 'questioning' (optional)",
-    "reason": "Brief, personalized explanation (1 sentence)"
+    "reason": "Brief, curious framing. E.g., 'It's been a while since you reflected on classroom environment. Anything happening there worth exploring?'"
   }`},
-  "prompt": "A personalized reflection prompt that references their specific context. Should feel like it's written just for them, not generic. If they've reflected on this area before, reference what they said.",
-  "context": "Brief context about why you're suggesting this (1 sentence). Could reference a goal, a gap, or building on recent momentum."
+  "prompt": "An open invitation with light suggestion. E.g., 'What's alive for you today? I notice you've been thinking about questioning lately - want to continue there, or is something else calling for attention?'",
+  "context": "Brief context (1 sentence). Frame as curiosity, not prescription."
 }
 
 Guidelines:
-- Make the prompt specific to THEIR situation
-- If they have a goal related to a skill, prioritize that
-- Reference specific things from past reflections
-- Keep the prompt conversational and warm
-- Prompt should be a question that invites thoughtful reflection
+- Offer invitations, not directives
+- If they have a goal, mention it as one option among many
+- Reference past reflections to show you're listening
+- The prompt should invite their choice, not direct it
+- Foster their sense of efficacy (they know what they need)
 
 Return ONLY the JSON.`
 

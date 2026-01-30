@@ -7,13 +7,9 @@ import {
   ArrowLeft,
   Target,
   Plus,
-  Trophy,
   ChevronDown,
-  BookOpen,
-  MessageCircle,
-  Rocket,
-  TrendingUp,
   Star,
+  CheckCircle2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { GoalCard, Goal, CreateGoalModal } from '@/components/goals'
@@ -127,7 +123,7 @@ export default function GoalsPage() {
   const abandonedGoals = goals.filter(g => g.status === 'ABANDONED')
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white pb-6 relative overflow-hidden">
       <PixelStars />
 
       {/* Header - 8-bit style */}
@@ -141,7 +137,7 @@ export default function GoalsPage() {
           </button>
           <h1 className="text-xl font-black flex items-center gap-2 uppercase tracking-[0.15em] px-4 py-2 border-4 border-[#4a7ba8] bg-[#0f2744]" style={{ boxShadow: '4px 4px 0 #0a1628' }}>
             <Target className="w-5 h-5 text-[#7db4e0]" />
-            Goals
+            Commitments
           </h1>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -153,11 +149,11 @@ export default function GoalsPage() {
       </header>
 
       <main className="max-w-4xl mx-auto p-4 space-y-6 relative z-10">
-        {/* Stats Summary - 8-bit style */}
+        {/* Stats Summary - simplified */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-3 gap-3"
+          className="grid grid-cols-2 gap-3"
         >
           <div
             className="bg-[#0f2744] border-4 border-[#4a7ba8] p-4 text-center"
@@ -174,24 +170,10 @@ export default function GoalsPage() {
             style={{ boxShadow: '4px 4px 0 #0a1628' }}
           >
             <div className="w-10 h-10 mx-auto mb-2 bg-[#6b7280] border-2 border-[#9ca3af] flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-white" />
+              <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
             <p className="text-2xl font-black text-[#c0c0c0]">{summary.completed}</p>
             <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Completed</p>
-          </div>
-          <div
-            className="bg-[#0f2744] border-4 border-[#6ba3d6] p-4 text-center"
-            style={{ boxShadow: '4px 4px 0 #0a1628' }}
-          >
-            <div className="w-10 h-10 mx-auto mb-2 bg-[#4a7ba8] border-2 border-[#6ba3d6] flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <p className="text-2xl font-black">
-              {summary.completed + summary.active > 0
-                ? Math.round((summary.completed / (summary.completed + summary.active + summary.abandoned)) * 100)
-                : 0}%
-            </p>
-            <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Success Rate</p>
           </div>
         </motion.div>
 
@@ -221,7 +203,7 @@ export default function GoalsPage() {
           </div>
         ) : (
           <>
-            {/* Active Goals */}
+            {/* Active Commitments */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -231,7 +213,7 @@ export default function GoalsPage() {
                 <div className="w-8 h-8 bg-[#2d5a87] border-2 border-[#4a7ba8] flex items-center justify-center">
                   <Target className="w-4 h-4 text-white" />
                 </div>
-                Active Goals
+                Active Commitments
               </h2>
 
               {activeGoals.length === 0 ? (
@@ -239,14 +221,14 @@ export default function GoalsPage() {
                   <div className="w-16 h-16 mx-auto mb-4 bg-[#1e3a5f] border-4 border-[#2d4a6f] flex items-center justify-center">
                     <Target className="w-8 h-8 text-slate-500" />
                   </div>
-                  <p className="text-slate-500 mb-4 font-bold uppercase tracking-wide">No active goals yet.</p>
+                  <p className="text-slate-500 mb-4 font-bold uppercase tracking-wide">No active commitments yet.</p>
                   <button
                     onClick={() => setShowCreateModal(true)}
                     className="px-6 py-3 bg-[#2d5a87] text-white font-black uppercase tracking-[0.1em] border-4 border-[#4a7ba8] hover:translate-x-1 hover:-translate-y-1 transition-transform inline-flex items-center gap-2"
                     style={{ boxShadow: '4px 4px 0 #0a1628' }}
                   >
                     <Plus className="w-4 h-4" />
-                    Create Your First Goal
+                    Set Your First Commitment
                   </button>
                 </div>
               ) : (
@@ -269,7 +251,7 @@ export default function GoalsPage() {
               )}
             </motion.div>
 
-            {/* Completed Goals - 8-bit style */}
+            {/* Completed Commitments */}
             {(completedGoals.length > 0 || abandonedGoals.length > 0) && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -283,9 +265,9 @@ export default function GoalsPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-[#6b7280] border-2 border-[#9ca3af] flex items-center justify-center">
-                      <Trophy className="w-4 h-4 text-white" />
+                      <CheckCircle2 className="w-4 h-4 text-white" />
                     </div>
-                    <span className="font-black uppercase tracking-[0.1em]">Past Goals</span>
+                    <span className="font-black uppercase tracking-[0.1em]">Past Commitments</span>
                     <span className="text-sm text-slate-500 font-bold">
                       ({completedGoals.length + abandonedGoals.length})
                     </span>
@@ -341,34 +323,6 @@ export default function GoalsPage() {
         onClose={() => setShowCreateModal(false)}
         onCreateGoal={handleCreateGoal}
       />
-
-      {/* Bottom Nav - 8-bit style */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0a1628] border-t-4 border-[#2d4a6f] z-30">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-around py-2">
-            <button onClick={() => router.push('/play')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#7db4e0] transition-colors p-2">
-              <Rocket className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Base</span>
-            </button>
-            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#a0c4e8] transition-colors p-2">
-              <BookOpen className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Log</span>
-            </button>
-            <button onClick={() => router.push('/play/coach')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Coach</span>
-            </button>
-            <button className="flex flex-col items-center gap-0.5 text-[#7db4e0] p-2 border-2 border-[#4a7ba8] bg-[#1e3a5f]">
-              <Target className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Goals</span>
-            </button>
-            <button onClick={() => router.push('/play/progress')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#6ba3d6] transition-colors p-2">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Progress</span>
-            </button>
-          </div>
-        </div>
-      </nav>
     </div>
   )
 }

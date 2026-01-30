@@ -6,19 +6,15 @@ import { motion } from 'framer-motion'
 import {
   ArrowLeft,
   TrendingUp,
-  Zap,
   Calendar,
   Flame,
-  Target,
   BookOpen,
-  Rocket,
-  MessageCircle,
   BarChart3,
   Star,
   Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { XpChart, ActivityHeatmap, DomainBreakdown } from '@/components/progress'
+import { ActivityHeatmap, DomainBreakdown } from '@/components/progress'
 
 // 8-bit pixel stars component
 const PixelStars = () => (
@@ -153,7 +149,7 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white pb-6 relative overflow-hidden">
       <PixelStars />
 
       {/* Header - 8-bit style */}
@@ -167,7 +163,7 @@ export default function ProgressPage() {
           </button>
           <h1 className="text-xl font-black flex items-center gap-2 uppercase tracking-[0.15em] px-4 py-2 border-4 border-[#4a7ba8] bg-[#0f2744]" style={{ boxShadow: '4px 4px 0 #0a1628' }}>
             <TrendingUp className="w-5 h-5 text-[#7db4e0]" />
-            Progress
+            Growth Archive
           </h1>
           <div className="w-10" />
         </div>
@@ -216,24 +212,12 @@ export default function ProgressPage() {
           </div>
         ) : (
           <>
-            {/* Summary Stats - 8-bit style */}
+            {/* Summary Stats - simplified */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-3"
+              className="grid grid-cols-3 gap-3"
             >
-              <div
-                className="bg-[#0f2744] border-4 border-[#6b7280] p-4 text-center"
-                style={{ boxShadow: '4px 4px 0 #0a1628' }}
-              >
-                <div className="w-10 h-10 mx-auto mb-2 bg-[#6b7280] border-2 border-[#9ca3af] flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <p className="text-2xl font-black text-[#c0c0c0]">
-                  {timelineData?.summary.totalXp || 0}
-                </p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Total XP</p>
-              </div>
               <div
                 className="bg-[#0f2744] border-4 border-[#4a7ba8] p-4 text-center"
                 style={{ boxShadow: '4px 4px 0 #0a1628' }}
@@ -263,43 +247,13 @@ export default function ProgressPage() {
                 style={{ boxShadow: '4px 4px 0 #0a1628' }}
               >
                 <div className="w-10 h-10 mx-auto mb-2 bg-[#2d5a87] border-2 border-[#4a7ba8] flex items-center justify-center">
-                  <Target className="w-5 h-5 text-white" />
+                  <BookOpen className="w-5 h-5 text-white" />
                 </div>
                 <p className="text-2xl font-black text-[#7db4e0]">
-                  {timelineData?.summary.averageXp || 0}
+                  {activityData?.summary.totalReflections || 0}
                 </p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Avg XP/Day</p>
+                <p className="text-[10px] text-slate-400 uppercase tracking-wide font-bold">Reflections</p>
               </div>
-            </motion.div>
-
-            {/* XP Timeline Chart - 8-bit style */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-[#0f2744] border-4 border-[#4a7ba8] p-4"
-              style={{ boxShadow: '4px 4px 0 #0a1628' }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-black flex items-center gap-2 uppercase tracking-[0.1em]">
-                  <div className="w-8 h-8 bg-[#2d5a87] border-2 border-[#4a7ba8] flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-white" />
-                  </div>
-                  XP Over Time
-                </h2>
-                {timelineData?.summary.bestDay && (
-                  <div className="text-xs text-slate-400 font-bold">
-                    Best: <span className="text-[#7db4e0]">{timelineData.summary.bestDay.total} XP</span>
-                  </div>
-                )}
-              </div>
-              {timelineData && (
-                <XpChart
-                  data={timelineData.timeline}
-                  period={period}
-                  showBreakdown={false}
-                />
-              )}
             </motion.div>
 
             {/* Activity Heatmap - 8-bit style */}
@@ -346,61 +300,11 @@ export default function ProgressPage() {
               )}
             </motion.div>
 
-            {/* XP Sources - 8-bit style */}
-            {timelineData && (timelineData.bySource.signal > 0 || timelineData.bySource.reflection > 0) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-[#0f2744] border-4 border-[#6b7280] p-4"
-                style={{ boxShadow: '4px 4px 0 #0a1628' }}
-              >
-                <h2 className="font-black flex items-center gap-2 mb-4 uppercase tracking-[0.1em]">
-                  <div className="w-8 h-8 bg-[#6b7280] border-2 border-[#9ca3af] flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-white" />
-                  </div>
-                  XP Sources
-                </h2>
-                <div className="space-y-3">
-                  {timelineData.bySource.signal > 0 && (
-                    <div className="flex items-center justify-between p-2 bg-[#1e3a5f]/50 border-2 border-[#2d4a6f]">
-                      <span className="text-sm text-slate-400 font-bold">Daily Check-ins</span>
-                      <span className="text-[#7db4e0] font-black">+{timelineData.bySource.signal} XP</span>
-                    </div>
-                  )}
-                  {timelineData.bySource.reflection > 0 && (
-                    <div className="flex items-center justify-between p-2 bg-[#1e3a5f]/50 border-2 border-[#2d4a6f]">
-                      <span className="text-sm text-slate-400 font-bold">Reflections</span>
-                      <span className="text-[#a0c4e8] font-black">+{timelineData.bySource.reflection} XP</span>
-                    </div>
-                  )}
-                  {timelineData.bySource.quest > 0 && (
-                    <div className="flex items-center justify-between p-2 bg-[#1e3a5f]/50 border-2 border-[#2d4a6f]">
-                      <span className="text-sm text-slate-400 font-bold">Quests</span>
-                      <span className="text-[#c0c0c0] font-black">+{timelineData.bySource.quest} XP</span>
-                    </div>
-                  )}
-                  {timelineData.bySource.streak > 0 && (
-                    <div className="flex items-center justify-between p-2 bg-[#1e3a5f]/50 border-2 border-[#2d4a6f]">
-                      <span className="text-sm text-slate-400 font-bold">Streak Bonus</span>
-                      <span className="text-[#6ba3d6] font-black">+{timelineData.bySource.streak} XP</span>
-                    </div>
-                  )}
-                  {timelineData.bySource.variety > 0 && (
-                    <div className="flex items-center justify-between p-2 bg-[#1e3a5f]/50 border-2 border-[#2d4a6f]">
-                      <span className="text-sm text-slate-400 font-bold">Variety & Bonuses</span>
-                      <span className="text-[#9ca3af] font-black">+{timelineData.bySource.variety} XP</span>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
             {/* Growth Insights - 8-bit style */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
+              transition={{ delay: 0.4 }}
               className="bg-[#1e3a5f]/40 border-4 border-[#4a7ba8] p-4"
               style={{ boxShadow: '4px 4px 0 #0a1628' }}
             >
@@ -408,22 +312,22 @@ export default function ProgressPage() {
                 <div className="w-8 h-8 bg-[#2d5a87] border-2 border-[#4a7ba8] flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
-                Growth Insights
+                Growth Patterns
               </h2>
               <div className="space-y-2 text-sm text-slate-300">
                 {activityData && activityData.streak.current > 0 && (
                   <p>
-                    You&apos;re on a <span className="text-[#a0c4e8] font-black">{activityData.streak.current}-day streak</span>! Keep it going.
+                    You&apos;ve been reflecting for <span className="text-[#a0c4e8] font-black">{activityData.streak.current} days</span> in a row. Consistency builds insight.
                   </p>
                 )}
                 {activityData && activityData.streak.longest > activityData.streak.current && (
                   <p>
-                    Your record is <span className="text-[#6ba3d6] font-black">{activityData.streak.longest} days</span>. You&apos;re {activityData.streak.longest - activityData.streak.current} days away from beating it!
+                    Your longest streak was <span className="text-[#6ba3d6] font-black">{activityData.streak.longest} days</span>.
                   </p>
                 )}
-                {timelineData && timelineData.summary.averageXp > 0 && (
+                {activityData && activityData.summary.totalReflections > 0 && (
                   <p>
-                    You&apos;re averaging <span className="text-[#7db4e0] font-black">{timelineData.summary.averageXp} XP per active day</span>.
+                    You&apos;ve captured <span className="text-[#7db4e0] font-black">{activityData.summary.totalReflections} reflections</span> - each one adding to your growth story.
                   </p>
                 )}
                 {activityData && activityData.summary.totalActivities === 0 && (
@@ -457,34 +361,6 @@ export default function ProgressPage() {
           </>
         )}
       </main>
-
-      {/* Bottom Nav - 8-bit style */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0a1628] border-t-4 border-[#2d4a6f] z-30">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-around py-2">
-            <button onClick={() => router.push('/play')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#7db4e0] transition-colors p-2">
-              <Rocket className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Base</span>
-            </button>
-            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#a0c4e8] transition-colors p-2">
-              <BookOpen className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Log</span>
-            </button>
-            <button onClick={() => router.push('/play/coach')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Coach</span>
-            </button>
-            <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#7db4e0] transition-colors p-2">
-              <Target className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Goals</span>
-            </button>
-            <button className="flex flex-col items-center gap-0.5 text-[#7db4e0] p-2 border-2 border-[#4a7ba8] bg-[#1e3a5f]">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-wide">Progress</span>
-            </button>
-          </div>
-        </div>
-      </nav>
     </div>
   )
 }

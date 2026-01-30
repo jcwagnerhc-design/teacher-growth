@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { format, parseISO, startOfWeek, addDays, getDay } from 'date-fns'
+import { format, parseISO, startOfWeek, addDays, subWeeks, isAfter, isBefore } from 'date-fns'
 import { cn } from '@/lib/utils'
 
 interface ActivityEntry {
@@ -18,62 +18,54 @@ interface ActivityHeatmapProps {
 }
 
 const LEVEL_COLORS = [
-  'bg-slate-800', // 0 - no activity
-  'bg-[#1e3a5f]/50', // 1 - light (Blair navy)
-  'bg-[#2d5a87]/60', // 2 - medium-light
-  'bg-[#4a7ba8]/70', // 3 - medium
-  'bg-[#7db4e0]', // 4 - high (Blair light blue)
+  'bg-slate-700/50', // 0 - no activity
+  'bg-emerald-900/60', // 1 - light
+  'bg-emerald-700/70', // 2 - medium-light
+  'bg-emerald-500/80', // 3 - medium
+  'bg-emerald-400', // 4 - high
 ]
 
-const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function ActivityHeatmap({ data, period }: ActivityHeatmapProps) {
-  // Organize data into weeks for grid display
-  const { weeks, monthLabels } = useMemo(() => {
-    if (data.length === 0) return { weeks: [], monthLabels: [] }
+  // Calculate number of weeks to show based on period
+  const numWeeks = period === 'week' ? 1 : period === 'month' ? 5 : 13
 
+  // Organize data into a calendar grid
+  const { weeks, weekLabels } = useMemo(() => {
     const dataMap = new Map(data.map(d => [d.date, d]))
     const weeks: (ActivityEntry | null)[][] = []
-    const monthLabels: { weekIndex: number; label: string }[] = []
+    const weekLabels: string[] = []
 
-    // Get the start date (first day in data) and ensure we start from a Sunday
-    const firstDate = parseISO(data[0].date)
-    const weekStart = startOfWeek(firstDate)
+    // Start from current week and go back
+    const today = new Date()
+    const currentWeekStart = startOfWeek(today)
 
-    // Calculate how many weeks we need
-    const lastDate = parseISO(data[data.length - 1].date)
-    const numWeeks = Math.ceil((lastDate.getTime() - weekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
-
-    let currentMonth = ''
-
-    for (let weekIdx = 0; weekIdx < numWeeks; weekIdx++) {
+    for (let weekIdx = numWeeks - 1; weekIdx >= 0; weekIdx--) {
+      const weekStart = subWeeks(currentWeekStart, weekIdx)
       const week: (ActivityEntry | null)[] = []
 
+      // Generate label for this week
+      weekLabels.push(format(weekStart, 'MMM d'))
+
       for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-        const date = addDays(weekStart, weekIdx * 7 + dayIdx)
+        const date = addDays(weekStart, dayIdx)
         const dateStr = format(date, 'yyyy-MM-dd')
-        const entry = dataMap.get(dateStr)
 
-        // Track month labels
-        const monthLabel = format(date, 'MMM')
-        if (monthLabel !== currentMonth && dayIdx === 0) {
-          currentMonth = monthLabel
-          monthLabels.push({ weekIndex: weekIdx, label: monthLabel })
-        }
-
-        if (entry) {
-          week.push(entry)
-        } else {
-          // Date outside our data range - show as null
+        // Don't show future dates
+        if (isAfter(date, today)) {
           week.push(null)
+        } else {
+          const entry = dataMap.get(dateStr)
+          week.push(entry || { date: dateStr, signalCount: 0, reflectionCount: 0, totalCount: 0, level: 0 })
         }
       }
 
       weeks.push(week)
     }
 
-    return { weeks, monthLabels }
-  }, [data])
+    return { weeks, weekLabels }
+  }, [data, numWeeks])
 
   if (data.length === 0) {
     return (
@@ -84,63 +76,64 @@ export function ActivityHeatmap({ data, period }: ActivityHeatmapProps) {
   }
 
   return (
-    <div className="space-y-2">
-      {/* Month labels */}
-      <div className="flex gap-1 pl-6 text-xs text-slate-500">
-        {monthLabels.map((m, i) => (
-          <span
-            key={i}
-            className="absolute"
-            style={{ marginLeft: `${m.weekIndex * 16 + 24}px` }}
-          >
-            {m.label}
-          </span>
+    <div className="space-y-3">
+      {/* Header row with day labels */}
+      <div className="grid grid-cols-8 gap-1 text-xs text-slate-400">
+        <div className="w-16"></div>
+        {DAY_LABELS.map((day, i) => (
+          <div key={i} className="text-center font-medium py-1">
+            {day}
+          </div>
         ))}
       </div>
 
-      <div className="flex gap-2">
-        {/* Day labels */}
-        <div className="flex flex-col gap-1 text-xs text-slate-500">
-          {DAY_LABELS.map((day, i) => (
-            <div key={i} className="h-3 flex items-center justify-center w-4">
-              {i % 2 === 1 ? day : ''}
+      {/* Calendar grid */}
+      <div className="space-y-1">
+        {weeks.map((week, weekIdx) => (
+          <div key={weekIdx} className="grid grid-cols-8 gap-1">
+            {/* Week label */}
+            <div className="w-16 text-xs text-slate-500 flex items-center pr-2 justify-end">
+              {weekLabels[weekIdx]}
             </div>
-          ))}
-        </div>
 
-        {/* Heatmap grid */}
-        <div className="flex gap-1 overflow-x-auto pb-2">
-          {weeks.map((week, weekIdx) => (
-            <div key={weekIdx} className="flex flex-col gap-1">
-              {week.map((day, dayIdx) => (
-                <div
-                  key={dayIdx}
-                  className={cn(
-                    'w-3 h-3 rounded-sm transition-colors cursor-pointer',
-                    day === null
-                      ? 'bg-slate-900/30'
-                      : LEVEL_COLORS[day.level],
-                    day && day.level > 0 && 'hover:ring-2 hover:ring-white/30'
-                  )}
-                  title={
-                    day
-                      ? `${format(parseISO(day.date), 'MMM d, yyyy')}: ${day.totalCount} activities`
-                      : undefined
-                  }
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+            {/* Days in week */}
+            {week.map((day, dayIdx) => (
+              <div
+                key={dayIdx}
+                className={cn(
+                  'aspect-square rounded-md transition-all flex items-center justify-center text-xs',
+                  day === null
+                    ? 'bg-slate-800/30'
+                    : LEVEL_COLORS[day.level],
+                  day && day.level > 0 && 'hover:ring-2 hover:ring-white/40 cursor-pointer'
+                )}
+                title={
+                  day && day.level > 0
+                    ? `${format(parseISO(day.date), 'EEEE, MMM d')}: ${day.totalCount} ${day.totalCount === 1 ? 'reflection' : 'reflections'}`
+                    : day
+                    ? format(parseISO(day.date), 'EEEE, MMM d')
+                    : undefined
+                }
+              >
+                {day && day.totalCount > 0 && (
+                  <span className="text-white/90 font-medium">{day.totalCount}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-end gap-2 text-xs text-slate-500 mt-2">
-        <span>Less</span>
-        {LEVEL_COLORS.map((color, i) => (
-          <div key={i} className={cn('w-3 h-3 rounded-sm', color)} />
-        ))}
-        <span>More</span>
+      <div className="flex items-center justify-center gap-3 text-xs text-slate-400 pt-2 border-t border-slate-700/50">
+        <span>Activity:</span>
+        <div className="flex items-center gap-1">
+          <span>None</span>
+          {LEVEL_COLORS.map((color, i) => (
+            <div key={i} className={cn('w-4 h-4 rounded', color)} />
+          ))}
+          <span>High</span>
+        </div>
       </div>
     </div>
   )

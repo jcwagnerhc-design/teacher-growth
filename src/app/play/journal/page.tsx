@@ -14,10 +14,6 @@ import {
   Heart,
   Presentation,
   BarChart3,
-  MessageCircle,
-  Target,
-  Rocket,
-  TrendingUp,
   Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -40,7 +36,6 @@ interface Reflection {
   skillName: string | null
   primaryResponse: string
   followUpResponse: string | null
-  xpEarned: number
 }
 
 export default function JournalPage() {
@@ -150,7 +145,7 @@ export default function JournalPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#0f2744] to-[#0a1628] text-white pb-6">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-[#0a1628] border-b-4 border-[#2d4a6f] p-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -252,10 +247,7 @@ export default function JournalPage() {
                                       </p>
                                     </div>
                                     <div className="text-right shrink-0 flex items-center gap-2">
-                                      <div>
-                                        <p className="text-[10px] text-slate-500">{formatDate(reflection.createdAt)}</p>
-                                        <p className="text-xs text-[#c0c0c0] font-bold">+{reflection.xpEarned}</p>
-                                      </div>
+                                      <p className="text-[10px] text-slate-500">{formatDate(reflection.createdAt)}</p>
                                       <ChevronRight className={cn('w-4 h-4 text-slate-600 transition-transform', isExpanded && 'rotate-90')} />
                                     </div>
                                   </button>
@@ -347,33 +339,6 @@ export default function JournalPage() {
         )}
       </main>
 
-      {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0a1628] border-t-4 border-[#2d4a6f] z-30">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-around py-2">
-            <button onClick={() => router.push('/play')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#7db4e0] transition-colors p-2">
-              <Rocket className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Base</span>
-            </button>
-            <button onClick={() => router.push('/play/reflect')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#a0c4e8] transition-colors p-2">
-              <BookOpen className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Log</span>
-            </button>
-            <button onClick={() => router.push('/play/coach')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#c0c0c0] transition-colors p-2">
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Coach</span>
-            </button>
-            <button onClick={() => router.push('/play/goals')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#7db4e0] transition-colors p-2">
-              <Target className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Goals</span>
-            </button>
-            <button onClick={() => router.push('/play/progress')} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-[#6ba3d6] transition-colors p-2">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Progress</span>
-            </button>
-          </div>
-        </div>
-      </nav>
     </div>
   )
 }

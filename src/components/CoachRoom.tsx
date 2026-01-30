@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Send, Loader2 } from 'lucide-react'
 import { CharacterCustomization } from './PixelCharacter'
 
-// Tile size
-const TILE = 48
+// Tile size - larger for better visibility
+const TILE = 56
 const ROOM_W = 10
 const ROOM_H = 8
 
@@ -44,7 +44,7 @@ export default function CoachRoom({ onExit }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [character, setCharacter] = useState<CharacterCustomization>(DEFAULT_CHARACTER)
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'coach', content: "Welcome to my office! What's on your mind today? I'm here to help you reflect on your teaching practice." }
+    { role: 'coach', content: "Welcome! Make yourself comfortable on the red couch. What's on your mind today? I'm here to help you reflect on your teaching practice." }
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -156,19 +156,31 @@ export default function CoachRoom({ onExit }: Props) {
     ctx.arc(w/2 + 15, h * 0.58, 7, 0, Math.PI * 2)
     ctx.fill()
 
-    // Player's chair (left side, facing coach)
-    ctx.fillStyle = '#8B4513'
-    ctx.fillRect(50, 160, 70, 60)
-    ctx.fillStyle = '#A0522D'
-    ctx.fillRect(55, 165, 60, 50)
-    // Cushion
-    ctx.fillStyle = '#3B82F6'
-    ctx.fillRect(60, 180, 50, 30)
-    ctx.fillStyle = '#60A5FA'
-    ctx.fillRect(65, 185, 40, 20)
+    // Large red couch for player (left side, facing coach)
+    // Couch frame - much bigger
+    ctx.fillStyle = '#5D1A1A'
+    ctx.fillRect(20, 130, 160, 100)
+    // Couch back - tall and plush
+    ctx.fillStyle = '#8B0000'
+    ctx.fillRect(25, 135, 150, 45)
+    ctx.fillStyle = '#A52A2A'
+    ctx.fillRect(35, 145, 130, 30)
+    // Seat cushion - deep red, comfortable
+    ctx.fillStyle = '#B22222'
+    ctx.fillRect(25, 180, 150, 45)
+    ctx.fillStyle = '#CD5C5C'
+    ctx.fillRect(35, 188, 130, 30)
+    // Plush armrests
+    ctx.fillStyle = '#8B0000'
+    ctx.fillRect(20, 135, 18, 90)
+    ctx.fillRect(162, 135, 18, 90)
+    // Armrest tops
+    ctx.fillStyle = '#A52A2A'
+    ctx.fillRect(20, 135, 18, 15)
+    ctx.fillRect(162, 135, 18, 15)
 
-    // Player sitting
-    drawPlayer(ctx, 85, 155, character)
+    // Player sitting on red couch
+    drawPlayer(ctx, 100, 150, character)
 
     // Window with curtains
     ctx.fillStyle = '#87CEEB'

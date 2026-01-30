@@ -6,9 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronRight,
   ChevronLeft,
-  Zap,
   X,
-  Check,
   Rocket,
   ClipboardList,
   Presentation,
@@ -17,6 +15,7 @@ import {
   Star,
   Sparkles,
   Target,
+  CheckCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CoachChat } from '@/components/coaching'
@@ -248,7 +247,6 @@ export default function ReflectPage() {
   const [followUpResponse, setFollowUpResponse] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
-  const [earnedXp, setEarnedXp] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [updatedGoals, setUpdatedGoals] = useState<Array<{
     id: string
@@ -399,12 +397,6 @@ export default function ReflectPage() {
 
   const modePrompts = getPromptForMode()
 
-  const calculateXp = () => {
-    let xp = 25 // Base XP for completing a reflection
-    if (followUpResponse.length > 20) xp += 15 // Bonus for thoughtful follow-up
-    return xp
-  }
-
   const handleSubmit = async () => {
     if (!selectedDomain || !selectedSkill || !primaryResponse) return
 
@@ -432,10 +424,6 @@ export default function ReflectPage() {
       }
 
       const data = await response.json()
-      setEarnedXp(data.xpEarned)
-
-      // Store for UI feedback
-      localStorage.setItem('recent-growth', JSON.stringify({ [selectedDomain]: data.xpEarned }))
 
       // Track goal updates
       if (data.goalsUpdated && data.goalsUpdated.length > 0) {
@@ -474,8 +462,7 @@ export default function ReflectPage() {
     } catch (err) {
       console.error('Failed to save reflection:', err)
       setError(err instanceof Error ? err.message : 'Failed to save reflection')
-      // Still show completion with calculated XP
-      setEarnedXp(calculateXp())
+      // Still show completion
       setIsComplete(true)
     } finally {
       setIsSubmitting(false)
@@ -523,11 +510,10 @@ export default function ReflectPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex items-center justify-center gap-3 text-3xl text-[#c0c0c0] mb-6"
+            className="flex items-center justify-center gap-3 text-xl text-slate-400 mb-6"
           >
-            <Zap className="w-8 h-8 fill-[#c0c0c0]" />
-            <span className="font-black">+{earnedXp} XP</span>
-            <Zap className="w-8 h-8 fill-[#c0c0c0]" />
+            <CheckCircle className="w-6 h-6 text-green-400" />
+            <span className="font-medium">Reflection saved</span>
           </motion.div>
 
           {/* Goal Progress */}
@@ -1003,33 +989,25 @@ export default function ReflectPage() {
                     : "What's one small step you could try tomorrow?"}
                 </h1>
                 <p className="text-slate-400 text-center mb-6">
-                  Dig deeper to unlock bonus XP
+                  Dig deeper to strengthen your growth
                 </p>
 
                 <textarea
                   value={followUpResponse}
                   onChange={(e) => setFollowUpResponse(e.target.value)}
-                  placeholder="Optional, but earns +15 XP..."
+                  placeholder="Optional - capture your insights..."
                   className="w-full h-32 bg-[#0f2744] border-4 border-[#4a7ba8] p-4 text-lg placeholder:text-slate-600 outline-none resize-none transition-colors font-medium focus:border-[#6ba3d6]"
                   style={{ boxShadow: 'inset 4px 4px 0 rgba(0,0,0,0.3)' }}
                   autoFocus
                 />
 
-                {/* XP Preview - 8-bit style */}
-                <div className="mt-6 p-4 bg-[#0f2744] border-4 border-[#4a7ba8]" style={{ boxShadow: '4px 4px 0 #0a1628' }}>
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm text-[#c0c0c0] font-black uppercase tracking-wide">Reflection XP</p>
-                    <div className="flex items-center gap-2 text-2xl text-[#c0c0c0]">
-                      <Zap className="w-6 h-6 fill-[#c0c0c0]" />
-                      <span className="font-black">{calculateXp()} XP</span>
-                    </div>
-                  </div>
-                  <div className="text-xs text-slate-500 mt-2 space-y-1">
-                    <p className="text-[#7db4e0]/70">+ 25 XP for reflection</p>
-                    {followUpResponse.length > 20 && (
-                      <p className="text-[#a0c4e8]/70">+ 15 XP for deeper thinking</p>
-                    )}
-                  </div>
+                {/* Encouragement message */}
+                <div className="mt-6 p-4 bg-[#0f2744]/50 border-2 border-[#4a7ba8]/50 rounded-lg">
+                  <p className="text-sm text-slate-400 text-center">
+                    {followUpResponse.length > 20
+                      ? "Great reflection! Your insights help you grow."
+                      : "Taking time to reflect deepens your learning."}
+                  </p>
                 </div>
               </motion.div>
             )}

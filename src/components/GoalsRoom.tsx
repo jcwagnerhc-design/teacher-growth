@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Beaker, Lightbulb, Check, Pin, X } from 'lucide-react'
+import { ArrowLeft, FlaskConical, Lightbulb, Check, Clipboard, TestTube } from 'lucide-react'
 import PixelCharacter, { CharacterCustomization, DEFAULT_CHARACTER } from './PixelCharacter'
 import { cn } from '@/lib/utils'
 
@@ -25,7 +25,7 @@ interface Props {
 // Suggested experiments based on domains
 const EXPERIMENT_SUGGESTIONS: Record<string, string[]> = {
   instruction: [
-    "Try 5-second wait time after every question tomorrow",
+    "Try 5-second wait time after every question",
     "Ask 3 questions that start with 'Why' or 'How'",
     "Cold call 2 students who haven't spoken today",
     "Use think-pair-share for your main question",
@@ -50,8 +50,8 @@ const EXPERIMENT_SUGGESTIONS: Record<string, string[]> = {
   ],
 }
 
-// Pin colors for bulletin board
-const PIN_COLORS = ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6']
+// Test tube colors for completed experiments
+const TUBE_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B']
 
 export default function GoalsRoom({ onExit }: Props) {
   const [character, setCharacter] = useState<CharacterCustomization>(DEFAULT_CHARACTER)
@@ -63,14 +63,14 @@ export default function GoalsRoom({ onExit }: Props) {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [terminalHistory, setTerminalHistory] = useState<Array<{ type: 'system' | 'user' | 'prompt' | 'suggestion'; text: string }>>([
     { type: 'system', text: 'TEACHING LAB v1.0' },
+    { type: 'system', text: 'Run weekly experiments. Learn what works.' },
     { type: 'system', text: '' },
-    { type: 'system', text: 'Commands: "new" to start, "done" to complete an experiment' },
+    { type: 'system', text: '"new" = start experiment | "done" = complete & reflect' },
   ])
 
   const inputRef = useRef<HTMLInputElement>(null)
   const terminalRef = useRef<HTMLDivElement>(null)
 
-  // Load character and experiments
   useEffect(() => {
     const profileStr = localStorage.getItem('teacher-profile')
     if (profileStr) {
@@ -90,7 +90,6 @@ export default function GoalsRoom({ onExit }: Props) {
     setIsLoading(false)
   }, [])
 
-  // Generate suggestions based on recent reflections
   useEffect(() => {
     const generateSuggestions = async () => {
       try {
@@ -146,33 +145,33 @@ export default function GoalsRoom({ onExit }: Props) {
       if (trimmed === 'new' || trimmed === 'n') {
         addToHistory('user', cmd)
         addToHistory('system', '')
-        addToHistory('prompt', "What do you want to try this week?")
+        addToHistory('prompt', "What are you going to try this week?")
         addToHistory('system', '')
-        addToHistory('system', 'Based on your recent reflections:')
+        addToHistory('system', 'Suggested experiments:')
         suggestions.forEach((s, i) => {
           addToHistory('suggestion', `  ${i + 1}. ${s}`)
         })
         addToHistory('system', '')
-        addToHistory('system', 'Type a number to select, or write your own.')
+        addToHistory('system', 'Pick a number or write your own hypothesis.')
         setMode('new')
       } else if (trimmed === 'done' || trimmed === 'd') {
         if (!activeExperiment) {
           addToHistory('user', cmd)
-          addToHistory('system', "No active experiment to complete.")
+          addToHistory('system', "No experiment running. Type 'new' to start one.")
           setInput('')
           return
         }
         addToHistory('user', cmd)
         addToHistory('system', '')
-        addToHistory('prompt', `Completing: "${activeExperiment.title}"`)
-        addToHistory('system', 'What did you learn? (or press Enter to skip)')
+        addToHistory('prompt', `Experiment complete: "${activeExperiment.title}"`)
+        addToHistory('system', 'What did you observe? (Enter to skip)')
         setSelectedExperiment(activeExperiment)
         setMode('complete')
       } else if (trimmed === 'exit' || trimmed === 'quit' || trimmed === 'q') {
         onExit()
       } else if (trimmed) {
         addToHistory('user', cmd)
-        addToHistory('system', 'Commands: "new" to start, "done" to complete')
+        addToHistory('system', '"new" = start | "done" = complete')
       }
     } else if (mode === 'new') {
       addToHistory('user', cmd)
@@ -185,7 +184,7 @@ export default function GoalsRoom({ onExit }: Props) {
       }
 
       if (experimentTitle.length < 5) {
-        addToHistory('system', 'Write a bit more (at least 5 characters)')
+        addToHistory('system', 'Describe your experiment (5+ chars)')
         setInput('')
         return
       }
@@ -204,8 +203,8 @@ export default function GoalsRoom({ onExit }: Props) {
       saveExperiments([newExperiment, ...updated])
 
       addToHistory('system', '')
-      addToHistory('system', `Experiment started!`)
-      addToHistory('system', 'Good luck! Type "done" when ready to reflect.')
+      addToHistory('system', 'Experiment started. Good luck this week!')
+      addToHistory('system', 'Type "done" when ready to record observations.')
       setMode('idle')
     } else if (mode === 'complete') {
       if (cmd.trim()) {
@@ -221,8 +220,7 @@ export default function GoalsRoom({ onExit }: Props) {
       saveExperiments(updated)
 
       addToHistory('system', '')
-      addToHistory('system', 'Experiment completed!')
-      addToHistory('system', 'Type "new" to start another.')
+      addToHistory('system', 'Results recorded. Ready for next experiment.')
       setSelectedExperiment(null)
       setMode('idle')
     }
@@ -246,159 +244,183 @@ export default function GoalsRoom({ onExit }: Props) {
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">Back to Classroom</span>
         </button>
-        <div className="flex items-center gap-2 text-amber-400">
-          <Beaker className="w-5 h-5" />
+        <div className="flex items-center gap-2 text-emerald-400">
+          <FlaskConical className="w-5 h-5" />
           <span className="text-sm font-medium">Teaching Lab</span>
         </div>
       </div>
 
-      {/* Bulletin Board */}
+      {/* Lab Bench */}
       <div
-        className="w-full max-w-[700px] mb-4 rounded-lg p-4 relative"
+        className="w-full max-w-[700px] mb-4 rounded-lg overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #8B4513 100%)',
-          boxShadow: 'inset 0 0 30px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.3)',
-          border: '8px solid #5D3A1A',
+          background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+          border: '2px solid #334155',
         }}
       >
-        {/* Cork texture overlay */}
+        {/* Lab shelf/counter surface */}
         <div
-          className="absolute inset-2 rounded opacity-30 pointer-events-none"
+          className="h-3"
           style={{
-            backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 100 100\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")',
+            background: 'linear-gradient(180deg, #475569 0%, #334155 100%)',
           }}
         />
 
-        {/* Board Title */}
-        <div className="text-center mb-4">
-          <span className="bg-amber-100 text-amber-900 px-4 py-1 rounded font-bold text-sm tracking-wide shadow-md">
-            EXPERIMENT BOARD
-          </span>
-        </div>
-
-        <div className="flex gap-4 min-h-[180px]">
-          {/* Active Experiment - Large Card */}
-          <div className="flex-1">
-            {isLoading ? (
-              <div className="h-full flex items-center justify-center">
-                <div className="text-amber-200/50 text-sm">Loading...</div>
+        <div className="p-5">
+          <div className="flex gap-6">
+            {/* Active Experiment - Clipboard */}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-3">
+                <Clipboard className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs text-emerald-400 font-medium uppercase tracking-wider">
+                  This Week&apos;s Experiment
+                </span>
               </div>
-            ) : activeExperiment ? (
-              <motion.div
-                initial={{ scale: 0.9, rotate: -2 }}
-                animate={{ scale: 1, rotate: -1 }}
-                className="relative bg-yellow-100 rounded shadow-lg p-4 h-full"
-                style={{
-                  transform: 'rotate(-1deg)',
-                  boxShadow: '3px 3px 10px rgba(0,0,0,0.3)',
-                }}
-              >
-                {/* Push pin */}
-                <div
-                  className="absolute -top-2 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full shadow-md flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #EF4444, #B91C1C)' }}
-                >
-                  <div className="w-2 h-2 rounded-full bg-red-300" />
+
+              {isLoading ? (
+                <div className="h-32 flex items-center justify-center text-slate-500">
+                  Loading...
                 </div>
-
-                <div className="flex items-center gap-2 mb-2 mt-2">
-                  <div className="w-8 h-8">
-                    <PixelCharacter customization={character} size="sm" />
-                  </div>
-                  <span className="text-xs text-amber-700 font-medium uppercase tracking-wide">
-                    This Week
-                  </span>
-                </div>
-
-                <p className="text-amber-900 font-medium text-sm leading-snug mb-3">
-                  {activeExperiment.title}
-                </p>
-
-                <p className="text-xs text-amber-600">
-                  Started {formatDate(activeExperiment.createdAt)}
-                </p>
-              </motion.div>
-            ) : (
-              <div
-                className="h-full flex flex-col items-center justify-center text-amber-200/60 border-2 border-dashed border-amber-200/30 rounded-lg"
-              >
-                <Lightbulb className="w-8 h-8 mb-2" />
-                <p className="text-sm">No active experiment</p>
-                <p className="text-xs mt-1">Type &quot;new&quot; to pin one</p>
-              </div>
-            )}
-          </div>
-
-          {/* Completed Experiments - Small Cards */}
-          <div className="w-48 space-y-2">
-            <p className="text-xs text-amber-200/70 font-medium uppercase tracking-wide px-1">
-              Completed
-            </p>
-            {completedExperiments.length === 0 ? (
-              <div className="text-xs text-amber-200/40 px-1 py-4 text-center">
-                None yet
-              </div>
-            ) : (
-              completedExperiments.map((exp, i) => (
+              ) : activeExperiment ? (
                 <motion.div
-                  key={exp.id}
-                  initial={{ scale: 0.9 }}
-                  animate={{ scale: 1 }}
-                  className="relative bg-green-100 rounded shadow p-2"
-                  style={{
-                    transform: `rotate(${(i % 2 === 0 ? 1 : -1) * (1 + i * 0.5)}deg)`,
-                  }}
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  className="relative"
                 >
-                  {/* Small push pin */}
+                  {/* Clipboard */}
                   <div
-                    className="absolute -top-1.5 right-3 w-3 h-3 rounded-full shadow"
-                    style={{ background: PIN_COLORS[i % PIN_COLORS.length] }}
-                  />
+                    className="bg-amber-50 rounded-lg p-4 relative"
+                    style={{
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    }}
+                  >
+                    {/* Clipboard clip */}
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-16 h-4 bg-gradient-to-b from-slate-400 to-slate-500 rounded-t-lg" />
+                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-2 bg-slate-600 rounded-sm" />
 
-                  <div className="flex items-start gap-1.5">
-                    <Check className="w-3 h-3 text-green-600 mt-0.5 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-green-900 line-clamp-2 leading-tight">
-                        {exp.title}
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8">
+                          <PixelCharacter customization={character} size="sm" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[10px] text-amber-600 uppercase tracking-wide font-medium">
+                            Hypothesis
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-amber-900 font-medium text-sm leading-relaxed mb-3 font-mono">
+                        &quot;{activeExperiment.title}&quot;
                       </p>
-                      {exp.reflection && (
-                        <p className="text-[10px] text-green-700/70 mt-1 italic line-clamp-1">
-                          &quot;{exp.reflection}&quot;
-                        </p>
-                      )}
+
+                      <div className="flex items-center gap-2 text-xs text-amber-600">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>In progress since {formatDate(activeExperiment.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
-              ))
-            )}
+              ) : (
+                <div
+                  className="h-32 flex flex-col items-center justify-center border-2 border-dashed border-slate-600 rounded-lg text-slate-500"
+                >
+                  <Lightbulb className="w-8 h-8 mb-2 text-slate-600" />
+                  <p className="text-sm">No experiment running</p>
+                  <p className="text-xs mt-1 text-slate-600">Type &quot;new&quot; to begin</p>
+                </div>
+              )}
+            </div>
+
+            {/* Completed Experiments - Test Tubes */}
+            <div className="w-44">
+              <div className="flex items-center gap-2 mb-3">
+                <TestTube className="w-4 h-4 text-slate-400" />
+                <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                  Past Results
+                </span>
+              </div>
+
+              {completedExperiments.length === 0 ? (
+                <div className="text-xs text-slate-600 py-8 text-center">
+                  No completed experiments
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {completedExperiments.map((exp, i) => (
+                    <motion.div
+                      key={exp.id}
+                      initial={{ x: 10, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="flex items-start gap-2 p-2 rounded bg-slate-800/50 border border-slate-700/50"
+                    >
+                      {/* Mini test tube icon */}
+                      <div
+                        className="w-3 h-6 rounded-b-full mt-0.5 shrink-0"
+                        style={{
+                          background: `linear-gradient(180deg, transparent 30%, ${TUBE_COLORS[i % TUBE_COLORS.length]} 30%)`,
+                          border: '1px solid rgba(255,255,255,0.2)',
+                        }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-300 line-clamp-2 leading-tight">
+                          {exp.title}
+                        </p>
+                        {exp.reflection && (
+                          <p className="text-[10px] text-slate-500 mt-1 italic line-clamp-1">
+                            {exp.reflection}
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Lab bench edge */}
+        <div
+          className="h-2"
+          style={{
+            background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
+            borderTop: '1px solid #334155',
+          }}
+        />
       </div>
 
-      {/* Terminal Input */}
+      {/* Terminal */}
       <div
-        className="w-full max-w-[700px] bg-black border-2 border-[#333] rounded-lg overflow-hidden font-mono text-sm"
-        style={{ boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)' }}
+        className="w-full max-w-[700px] bg-black border-2 border-emerald-900/50 rounded-lg overflow-hidden font-mono text-sm"
+        style={{ boxShadow: '0 0 20px rgba(16, 185, 129, 0.1)' }}
       >
+        <div className="bg-emerald-900/30 px-3 py-1.5 border-b border-emerald-900/50 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="text-emerald-400 text-xs">lab-terminal</span>
+        </div>
+
         <div ref={terminalRef} className="h-28 overflow-y-auto p-3 space-y-1">
           {terminalHistory.map((line, i) => (
             <div
               key={i}
               className={cn(
-                line.type === 'system' && 'text-[#00ff00]',
-                line.type === 'user' && 'text-[#ffff00]',
-                line.type === 'prompt' && 'text-[#00ffff] font-bold',
-                line.type === 'suggestion' && 'text-[#ff9900]',
+                line.type === 'system' && 'text-emerald-400',
+                line.type === 'user' && 'text-white',
+                line.type === 'prompt' && 'text-cyan-400 font-bold',
+                line.type === 'suggestion' && 'text-amber-400',
               )}
             >
-              {line.type === 'user' && <span className="text-[#888]">&gt; </span>}
+              {line.type === 'user' && <span className="text-emerald-600">$ </span>}
               {line.text}
             </div>
           ))}
         </div>
 
-        <div className="border-t border-[#333] p-3 flex items-center gap-2">
-          <span className="text-[#00ff00]">&gt;</span>
+        <div className="border-t border-emerald-900/50 p-3 flex items-center gap-2">
+          <span className="text-emerald-600">$</span>
           <input
             ref={inputRef}
             type="text"
@@ -409,11 +431,10 @@ export default function GoalsRoom({ onExit }: Props) {
                 handleCommand(input)
               }
             }}
-            className="flex-1 bg-transparent text-[#00ff00] outline-none caret-[#00ff00]"
-            placeholder={mode === 'idle' ? 'Type "new" or "done"...' : 'Type here...'}
+            className="flex-1 bg-transparent text-emerald-400 outline-none caret-emerald-400 placeholder:text-emerald-800"
+            placeholder={mode === 'idle' ? 'new | done' : 'enter response...'}
             autoFocus
           />
-          <span className="text-[#00ff00] animate-pulse">_</span>
         </div>
       </div>
     </div>

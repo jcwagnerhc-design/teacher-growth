@@ -529,73 +529,118 @@ export default function GoalsRoom({ onExit }: Props) {
         </div>
       </div>
 
-      {/* Lab Scene Canvas */}
-      <div className="w-full max-w-[700px] mb-3 flex justify-center">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_W}
-          height={CANVAS_H}
-          className="rounded-lg border-2 border-slate-700"
-          style={{
-            imageRendering: 'pixelated',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-          }}
-        />
-      </div>
-
-      {/* Experiment Board */}
+      {/* Lab Scene + Bulletin Board */}
       <div className="w-full max-w-[700px] mb-3 flex gap-4">
-        {/* Active Experiment */}
-        <div className="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Clipboard className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs text-emerald-400 font-medium uppercase tracking-wider">
-              This Week
-            </span>
-          </div>
-
-          {isLoading ? (
-            <p className="text-slate-500 text-sm">Loading...</p>
-          ) : activeExperiment ? (
-            <div>
-              <p className="text-white text-sm font-medium mb-1">{activeExperiment.title}</p>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Since {formatDate(activeExperiment.createdAt)}</span>
-              </div>
-            </div>
-          ) : (
-            <p className="text-slate-500 text-sm">No experiment running</p>
-          )}
+        {/* Lab Scene Canvas */}
+        <div className="flex-shrink-0">
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_W}
+            height={CANVAS_H}
+            className="rounded-lg border-2 border-slate-700"
+            style={{
+              imageRendering: 'pixelated',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            }}
+          />
         </div>
 
-        {/* Completed */}
-        <div className="w-48 bg-slate-900/80 border border-slate-700 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <TestTube className="w-4 h-4 text-slate-400" />
-            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-              Results
+        {/* Cork Bulletin Board */}
+        <div
+          className="flex-1 rounded-lg border-4 border-amber-900 p-3 min-h-[220px]"
+          style={{
+            background: 'linear-gradient(135deg, #c4a574 0%, #a67c52 50%, #8b6544 100%)',
+            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.3)',
+          }}
+        >
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+              Experiment Board
             </span>
           </div>
 
-          {completedExperiments.length === 0 ? (
-            <p className="text-slate-600 text-xs">None yet</p>
-          ) : (
-            <div className="space-y-1">
-              {completedExperiments.slice(0, 2).map((exp, i) => (
-                <div key={exp.id} className="flex items-center gap-2">
-                  <div
-                    className="w-2 h-4 rounded-b-full"
-                    style={{ background: TUBE_COLORS[i % TUBE_COLORS.length] }}
-                  />
-                  <p className="text-xs text-slate-300 line-clamp-1">{exp.title}</p>
+          <div className="flex flex-wrap gap-2">
+            {/* Active Experiment - Yellow sticky note */}
+            {activeExperiment && (
+              <motion.div
+                initial={{ scale: 0, rotate: -10 }}
+                animate={{ scale: 1, rotate: Math.random() * 6 - 3 }}
+                className="relative"
+              >
+                {/* Pin */}
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-red-500 border border-red-700 shadow-md z-10" />
+                <div
+                  className="w-24 pt-3 pb-2 px-2 shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #fef08a 0%, #fde047 100%)',
+                    transform: `rotate(${Math.random() * 4 - 2}deg)`,
+                  }}
+                >
+                  <div className="flex items-center gap-1 mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[8px] font-bold text-amber-800 uppercase">Active</span>
+                  </div>
+                  <p className="text-[10px] text-amber-900 font-medium line-clamp-3 leading-tight">
+                    {activeExperiment.title}
+                  </p>
                 </div>
-              ))}
-              {completedExperiments.length > 2 && (
-                <p className="text-xs text-slate-500">+{completedExperiments.length - 2} more</p>
-              )}
-            </div>
-          )}
+              </motion.div>
+            )}
+
+            {/* Completed Experiments - Various colored notes */}
+            {completedExperiments.map((exp, i) => {
+              const noteColors = [
+                'linear-gradient(135deg, #bbf7d0 0%, #86efac 100%)',
+                'linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%)',
+                'linear-gradient(135deg, #fecaca 0%, #fca5a5 100%)',
+                'linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%)',
+              ]
+              const textColors = ['#166534', '#1e40af', '#991b1b', '#6b21a8']
+              return (
+                <motion.div
+                  key={exp.id}
+                  initial={{ scale: 0, rotate: 10 }}
+                  animate={{ scale: 1, rotate: Math.random() * 8 - 4 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="relative"
+                >
+                  {/* Pin */}
+                  <div
+                    className="absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full border shadow-md z-10"
+                    style={{
+                      background: TUBE_COLORS[i % TUBE_COLORS.length],
+                      borderColor: TUBE_COLORS[i % TUBE_COLORS.length],
+                    }}
+                  />
+                  <div
+                    className="w-20 pt-3 pb-2 px-2 shadow-lg opacity-80"
+                    style={{
+                      background: noteColors[i % noteColors.length],
+                      transform: `rotate(${Math.random() * 6 - 3}deg)`,
+                    }}
+                  >
+                    <div className="flex items-center gap-1 mb-1">
+                      <Check className="w-2 h-2" style={{ color: textColors[i % textColors.length] }} />
+                      <span className="text-[7px] font-bold uppercase" style={{ color: textColors[i % textColors.length] }}>Done</span>
+                    </div>
+                    <p className="text-[9px] font-medium line-clamp-2 leading-tight" style={{ color: textColors[i % textColors.length] }}>
+                      {exp.title}
+                    </p>
+                  </div>
+                </motion.div>
+              )
+            })}
+
+            {/* Empty state */}
+            {!activeExperiment && completedExperiments.length === 0 && (
+              <div className="w-full flex items-center justify-center h-32">
+                <p className="text-amber-800/60 text-xs italic text-center">
+                  No experiments yet.<br/>
+                  Type "new" below to start.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

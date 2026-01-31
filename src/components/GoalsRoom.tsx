@@ -8,6 +8,22 @@ import { cn } from '@/lib/utils'
 
 const DEMO_USER_ID = 'demo-user-001'
 
+// Canvas dimensions
+const CANVAS_W = 400
+const CANVAS_H = 220
+
+// Character colors
+const SKIN_TONES = ['#FFDFC4', '#F0C8A0', '#D4A574', '#A67B5B', '#8B6544', '#5C4033']
+const HAIR_COLORS = ['#2C1810', '#4A3728', '#8B4513', '#CD853F', '#FFD700', '#FF6B35', '#9B59B6', '#3498DB']
+const OUTFIT_COLORS = [
+  { primary: '#3B82F6', secondary: '#1D4ED8' },
+  { primary: '#10B981', secondary: '#059669' },
+  { primary: '#8B5CF6', secondary: '#7C3AED' },
+  { primary: '#F59E0B', secondary: '#D97706' },
+  { primary: '#EC4899', secondary: '#DB2777' },
+  { primary: '#EF4444', secondary: '#DC2626' },
+]
+
 interface Experiment {
   id: string
   title: string
@@ -22,7 +38,6 @@ interface Props {
   onExit: () => void
 }
 
-// Suggested experiments based on domains
 const EXPERIMENT_SUGGESTIONS: Record<string, string[]> = {
   instruction: [
     "Try 5-second wait time after every question",
@@ -50,10 +65,10 @@ const EXPERIMENT_SUGGESTIONS: Record<string, string[]> = {
   ],
 }
 
-// Test tube colors for completed experiments
 const TUBE_COLORS = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B']
 
 export default function GoalsRoom({ onExit }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [character, setCharacter] = useState<CharacterCustomization>(DEFAULT_CHARACTER)
   const [experiments, setExperiments] = useState<Experiment[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -124,6 +139,270 @@ export default function GoalsRoom({ onExit }: Props) {
     setExperiments(exps)
     localStorage.setItem('teacher-experiments', JSON.stringify(exps))
   }, [])
+
+  // Draw lab scene
+  const renderLab = useCallback((ctx: CanvasRenderingContext2D) => {
+    const w = CANVAS_W
+    const h = CANVAS_H
+
+    // Background - lab wall
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(0, 0, w, h)
+
+    // Tile pattern on wall
+    ctx.strokeStyle = '#334155'
+    ctx.lineWidth = 1
+    for (let y = 0; y < h * 0.6; y += 20) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(w, y)
+      ctx.stroke()
+    }
+    for (let x = 0; x < w; x += 20) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, h * 0.6)
+      ctx.stroke()
+    }
+
+    // Lab bench (counter)
+    ctx.fillStyle = '#475569'
+    ctx.fillRect(0, h * 0.55, w, 15)
+    ctx.fillStyle = '#334155'
+    ctx.fillRect(0, h * 0.55 + 15, w, h * 0.45 - 15)
+
+    // Cabinet under bench
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(20, h * 0.65, 80, h * 0.35 - 10)
+    ctx.strokeStyle = '#475569'
+    ctx.lineWidth = 2
+    ctx.strokeRect(20, h * 0.65, 80, h * 0.35 - 10)
+    // Cabinet handle
+    ctx.fillStyle = '#64748b'
+    ctx.fillRect(85, h * 0.78, 8, 20)
+
+    // Shelf on wall
+    ctx.fillStyle = '#475569'
+    ctx.fillRect(20, 40, 150, 8)
+    ctx.fillStyle = '#334155'
+    ctx.fillRect(20, 48, 150, 4)
+
+    // Beakers on shelf
+    drawBeaker(ctx, 35, 10, '#10B981', 0.6)
+    drawBeaker(ctx, 70, 15, '#3B82F6', 0.4)
+    drawBeaker(ctx, 105, 8, '#F59E0B', 0.7)
+    drawBeaker(ctx, 140, 12, '#8B5CF6', 0.5)
+
+    // Large flask on bench
+    drawFlask(ctx, 280, h * 0.55 - 50, '#10B981')
+
+    // Test tube rack on bench
+    drawTestTubeRack(ctx, 330, h * 0.55 - 35)
+
+    // Microscope on bench
+    drawMicroscope(ctx, 180, h * 0.55 - 45)
+
+    // Clipboard on bench
+    ctx.fillStyle = '#92400e'
+    ctx.fillRect(120, h * 0.55 - 30, 40, 50)
+    ctx.fillStyle = '#fef3c7'
+    ctx.fillRect(123, h * 0.55 - 25, 34, 42)
+    // Clip
+    ctx.fillStyle = '#64748b'
+    ctx.fillRect(130, h * 0.55 - 32, 20, 6)
+
+    // Player character at bench
+    drawPlayer(ctx, 230, h * 0.55 - 55, character)
+
+    // Ceiling light
+    ctx.fillStyle = '#64748b'
+    ctx.fillRect(w / 2 - 40, 0, 80, 8)
+    ctx.fillStyle = '#fef9c3'
+    ctx.fillRect(w / 2 - 35, 8, 70, 6)
+    // Light glow
+    const glow = ctx.createRadialGradient(w / 2, 30, 0, w / 2, 30, 100)
+    glow.addColorStop(0, 'rgba(254, 249, 195, 0.15)')
+    glow.addColorStop(1, 'rgba(254, 249, 195, 0)')
+    ctx.fillStyle = glow
+    ctx.fillRect(0, 0, w, h * 0.6)
+
+  }, [character])
+
+  const drawBeaker = (ctx: CanvasRenderingContext2D, x: number, y: number, color: string, fillLevel: number) => {
+    // Beaker outline
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x - 5, y + 30)
+    ctx.lineTo(x + 25, y + 30)
+    ctx.lineTo(x + 20, y)
+    ctx.stroke()
+
+    // Liquid
+    const liquidHeight = 30 * fillLevel
+    ctx.fillStyle = color
+    ctx.globalAlpha = 0.7
+    ctx.beginPath()
+    ctx.moveTo(x - 5 + (1 - fillLevel) * 2.5, y + 30 - liquidHeight)
+    ctx.lineTo(x - 5, y + 30)
+    ctx.lineTo(x + 25, y + 30)
+    ctx.lineTo(x + 20 + (1 - fillLevel) * 2.5, y + 30 - liquidHeight)
+    ctx.fill()
+    ctx.globalAlpha = 1
+  }
+
+  const drawFlask = (ctx: CanvasRenderingContext2D, x: number, y: number, color: string) => {
+    // Flask body
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(x + 15, y)
+    ctx.lineTo(x + 15, y + 15)
+    ctx.lineTo(x, y + 45)
+    ctx.lineTo(x, y + 50)
+    ctx.lineTo(x + 40, y + 50)
+    ctx.lineTo(x + 40, y + 45)
+    ctx.lineTo(x + 25, y + 15)
+    ctx.lineTo(x + 25, y)
+    ctx.stroke()
+
+    // Liquid
+    ctx.fillStyle = color
+    ctx.globalAlpha = 0.6
+    ctx.beginPath()
+    ctx.moveTo(x + 5, y + 35)
+    ctx.lineTo(x + 2, y + 50)
+    ctx.lineTo(x + 38, y + 50)
+    ctx.lineTo(x + 35, y + 35)
+    ctx.fill()
+    ctx.globalAlpha = 1
+
+    // Bubbles
+    ctx.fillStyle = 'rgba(255,255,255,0.5)'
+    ctx.beginPath()
+    ctx.arc(x + 15, y + 42, 3, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.beginPath()
+    ctx.arc(x + 25, y + 45, 2, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  const drawTestTubeRack = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    // Rack base
+    ctx.fillStyle = '#5D4037'
+    ctx.fillRect(x, y + 30, 50, 5)
+    ctx.fillRect(x, y + 5, 50, 5)
+
+    // Test tubes
+    const tubeColors = ['#10B981', '#3B82F6', '#F59E0B', '#EC4899']
+    tubeColors.forEach((color, i) => {
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(x + 8 + i * 12, y + 5)
+      ctx.lineTo(x + 8 + i * 12, y + 28)
+      ctx.arc(x + 8 + i * 12, y + 28, 4, Math.PI, 0, true)
+      ctx.lineTo(x + 16 + i * 12, y + 5)
+      ctx.stroke()
+
+      // Liquid in tube
+      ctx.fillStyle = color
+      ctx.globalAlpha = 0.7
+      ctx.fillRect(x + 9 + i * 12, y + 15, 6, 15)
+      ctx.beginPath()
+      ctx.arc(x + 12 + i * 12, y + 28, 3, 0, Math.PI)
+      ctx.fill()
+      ctx.globalAlpha = 1
+    })
+  }
+
+  const drawMicroscope = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    // Base
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(x, y + 35, 40, 10)
+
+    // Arm
+    ctx.fillStyle = '#334155'
+    ctx.fillRect(x + 30, y, 8, 45)
+
+    // Eyepiece
+    ctx.fillStyle = '#475569'
+    ctx.fillRect(x + 28, y - 5, 12, 8)
+    ctx.fillStyle = '#1e293b'
+    ctx.beginPath()
+    ctx.arc(x + 34, y - 5, 5, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Objective
+    ctx.fillStyle = '#475569'
+    ctx.fillRect(x + 26, y + 25, 16, 8)
+
+    // Stage
+    ctx.fillStyle = '#64748b'
+    ctx.fillRect(x + 5, y + 30, 30, 5)
+  }
+
+  const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, char: CharacterCustomization) => {
+    const skinColor = SKIN_TONES[char.skinTone] || SKIN_TONES[1]
+    const hairColor = HAIR_COLORS[char.hairColor] || HAIR_COLORS[2]
+    const outfit = OUTFIT_COLORS[char.outfit] || OUTFIT_COLORS[0]
+
+    // Lab coat (white)
+    ctx.fillStyle = '#f1f5f9'
+    ctx.fillRect(x - 12, y + 20, 24, 35)
+
+    // Body under coat
+    ctx.fillStyle = outfit.primary
+    ctx.fillRect(x - 8, y + 22, 16, 15)
+
+    // Head
+    ctx.fillStyle = skinColor
+    ctx.beginPath()
+    ctx.arc(x, y + 10, 12, 0, Math.PI * 2)
+    ctx.fill()
+
+    // Hair
+    ctx.fillStyle = hairColor
+    ctx.beginPath()
+    ctx.arc(x, y + 6, 12, Math.PI, 0, true)
+    ctx.fill()
+
+    // Safety goggles
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(x - 10, y + 6, 20, 6)
+    ctx.fillStyle = '#60a5fa'
+    ctx.globalAlpha = 0.5
+    ctx.fillRect(x - 9, y + 7, 8, 4)
+    ctx.fillRect(x + 1, y + 7, 8, 4)
+    ctx.globalAlpha = 1
+
+    // Arms
+    ctx.fillStyle = '#f1f5f9'
+    ctx.fillRect(x - 18, y + 22, 8, 20)
+    ctx.fillRect(x + 10, y + 22, 8, 20)
+
+    // Hands
+    ctx.fillStyle = skinColor
+    ctx.fillRect(x - 17, y + 40, 6, 6)
+    ctx.fillRect(x + 11, y + 40, 6, 6)
+  }
+
+  // Animation loop
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animationId: number
+    const loop = () => {
+      renderLab(ctx)
+      animationId = requestAnimationFrame(loop)
+    }
+    loop()
+    return () => cancelAnimationFrame(animationId)
+  }, [renderLab])
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -236,7 +515,7 @@ export default function GoalsRoom({ onExit }: Props) {
   return (
     <div className="relative flex flex-col items-center p-4 h-full">
       {/* Header */}
-      <div className="w-full max-w-[700px] flex items-center justify-between mb-4">
+      <div className="w-full max-w-[700px] flex items-center justify-between mb-3">
         <button
           onClick={onExit}
           className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
@@ -250,146 +529,74 @@ export default function GoalsRoom({ onExit }: Props) {
         </div>
       </div>
 
-      {/* Lab Bench */}
-      <div
-        className="w-full max-w-[700px] mb-4 rounded-lg overflow-hidden"
-        style={{
-          background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
-          border: '2px solid #334155',
-        }}
-      >
-        {/* Lab shelf/counter surface */}
-        <div
-          className="h-3"
+      {/* Lab Scene Canvas */}
+      <div className="w-full max-w-[700px] mb-3 flex justify-center">
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_W}
+          height={CANVAS_H}
+          className="rounded-lg border-2 border-slate-700"
           style={{
-            background: 'linear-gradient(180deg, #475569 0%, #334155 100%)',
+            imageRendering: 'pixelated',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
           }}
         />
+      </div>
 
-        <div className="p-5">
-          <div className="flex gap-6">
-            {/* Active Experiment - Clipboard */}
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
-                <Clipboard className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs text-emerald-400 font-medium uppercase tracking-wider">
-                  This Week&apos;s Experiment
-                </span>
-              </div>
-
-              {isLoading ? (
-                <div className="h-32 flex items-center justify-center text-slate-500">
-                  Loading...
-                </div>
-              ) : activeExperiment ? (
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  className="relative"
-                >
-                  {/* Clipboard */}
-                  <div
-                    className="bg-amber-50 rounded-lg p-4 relative"
-                    style={{
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    }}
-                  >
-                    {/* Clipboard clip */}
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-16 h-4 bg-gradient-to-b from-slate-400 to-slate-500 rounded-t-lg" />
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-2 bg-slate-600 rounded-sm" />
-
-                    <div className="mt-2">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8">
-                          <PixelCharacter customization={character} size="sm" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[10px] text-amber-600 uppercase tracking-wide font-medium">
-                            Hypothesis
-                          </p>
-                        </div>
-                      </div>
-
-                      <p className="text-amber-900 font-medium text-sm leading-relaxed mb-3 font-mono">
-                        &quot;{activeExperiment.title}&quot;
-                      </p>
-
-                      <div className="flex items-center gap-2 text-xs text-amber-600">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>In progress since {formatDate(activeExperiment.createdAt)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ) : (
-                <div
-                  className="h-32 flex flex-col items-center justify-center border-2 border-dashed border-slate-600 rounded-lg text-slate-500"
-                >
-                  <Lightbulb className="w-8 h-8 mb-2 text-slate-600" />
-                  <p className="text-sm">No experiment running</p>
-                  <p className="text-xs mt-1 text-slate-600">Type &quot;new&quot; to begin</p>
-                </div>
-              )}
-            </div>
-
-            {/* Completed Experiments - Test Tubes */}
-            <div className="w-44">
-              <div className="flex items-center gap-2 mb-3">
-                <TestTube className="w-4 h-4 text-slate-400" />
-                <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                  Past Results
-                </span>
-              </div>
-
-              {completedExperiments.length === 0 ? (
-                <div className="text-xs text-slate-600 py-8 text-center">
-                  No completed experiments
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {completedExperiments.map((exp, i) => (
-                    <motion.div
-                      key={exp.id}
-                      initial={{ x: 10, opacity: 0 }}
-                      animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="flex items-start gap-2 p-2 rounded bg-slate-800/50 border border-slate-700/50"
-                    >
-                      {/* Mini test tube icon */}
-                      <div
-                        className="w-3 h-6 rounded-b-full mt-0.5 shrink-0"
-                        style={{
-                          background: `linear-gradient(180deg, transparent 30%, ${TUBE_COLORS[i % TUBE_COLORS.length]} 30%)`,
-                          border: '1px solid rgba(255,255,255,0.2)',
-                        }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-slate-300 line-clamp-2 leading-tight">
-                          {exp.title}
-                        </p>
-                        {exp.reflection && (
-                          <p className="text-[10px] text-slate-500 mt-1 italic line-clamp-1">
-                            {exp.reflection}
-                          </p>
-                        )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
+      {/* Experiment Board */}
+      <div className="w-full max-w-[700px] mb-3 flex gap-4">
+        {/* Active Experiment */}
+        <div className="flex-1 bg-slate-900/80 border border-slate-700 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Clipboard className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs text-emerald-400 font-medium uppercase tracking-wider">
+              This Week
+            </span>
           </div>
+
+          {isLoading ? (
+            <p className="text-slate-500 text-sm">Loading...</p>
+          ) : activeExperiment ? (
+            <div>
+              <p className="text-white text-sm font-medium mb-1">{activeExperiment.title}</p>
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Since {formatDate(activeExperiment.createdAt)}</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm">No experiment running</p>
+          )}
         </div>
 
-        {/* Lab bench edge */}
-        <div
-          className="h-2"
-          style={{
-            background: 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)',
-            borderTop: '1px solid #334155',
-          }}
-        />
+        {/* Completed */}
+        <div className="w-48 bg-slate-900/80 border border-slate-700 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <TestTube className="w-4 h-4 text-slate-400" />
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+              Results
+            </span>
+          </div>
+
+          {completedExperiments.length === 0 ? (
+            <p className="text-slate-600 text-xs">None yet</p>
+          ) : (
+            <div className="space-y-1">
+              {completedExperiments.slice(0, 2).map((exp, i) => (
+                <div key={exp.id} className="flex items-center gap-2">
+                  <div
+                    className="w-2 h-4 rounded-b-full"
+                    style={{ background: TUBE_COLORS[i % TUBE_COLORS.length] }}
+                  />
+                  <p className="text-xs text-slate-300 line-clamp-1">{exp.title}</p>
+                </div>
+              ))}
+              {completedExperiments.length > 2 && (
+                <p className="text-xs text-slate-500">+{completedExperiments.length - 2} more</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Terminal */}
@@ -402,7 +609,7 @@ export default function GoalsRoom({ onExit }: Props) {
           <span className="text-emerald-400 text-xs">lab-terminal</span>
         </div>
 
-        <div ref={terminalRef} className="h-28 overflow-y-auto p-3 space-y-1">
+        <div ref={terminalRef} className="h-24 overflow-y-auto p-3 space-y-1">
           {terminalHistory.map((line, i) => (
             <div
               key={i}

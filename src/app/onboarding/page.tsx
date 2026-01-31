@@ -226,10 +226,10 @@ export default function OnboardingPage() {
                       <div className="w-10 h-10 rounded-lg bg-[#DAA520] flex items-center justify-center">
                         <Target className="w-5 h-5 text-white" />
                       </div>
-                      <span className="font-semibold">Planning</span>
+                      <span className="font-semibold">Lab</span>
                     </div>
                     <p className="text-slate-400 text-sm">
-                      Set commitments for what you want to work on.
+                      Try experiments to bridge reflection to action.
                     </p>
                   </motion.div>
 

@@ -49,7 +49,7 @@ export type RoomType = 'coach' | 'journal' | 'goals' | 'archive'
 const DOOR_CONFIG: Record<number, { room: RoomType; label: string; glowColor: string; labelColor: string }> = {
   [DOOR_COACH]: { room: 'coach', label: "DOTL's Red Couch", glowColor: 'rgba(74, 124, 89, ', labelColor: '#4A7C59' },
   [DOOR_JOURNAL]: { room: 'journal', label: 'Journal', glowColor: 'rgba(107, 91, 149, ', labelColor: '#6B5B95' },
-  [DOOR_GOALS]: { room: 'goals', label: 'Planning', glowColor: 'rgba(218, 165, 32, ', labelColor: '#DAA520' },
+  [DOOR_GOALS]: { room: 'goals', label: 'Lab', glowColor: 'rgba(218, 165, 32, ', labelColor: '#DAA520' },
   [DOOR_ARCHIVE]: { room: 'archive', label: 'Records', glowColor: 'rgba(112, 128, 144, ', labelColor: '#708090' },
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isToday, isYesterday } from '@/lib/utils'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 type TransactionClient = Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>
 
@@ -8,40 +9,100 @@ interface ReflectionInput {
   userId: string
   primaryResponse: string
   followUpResponse?: string
-  domains: string[]
+  domains?: string[]
   skillId?: string
   skillName?: string
   prompt?: string
 }
 
-// XP calculation for reflections:
-// - Base: 20 XP
-// - Per domain selected: +15 XP each
-// - Follow-up response > 20 chars: +10 XP
-function calculateReflectionXp(domains: string[], followUpResponse?: string): { total: number; byDomain: Record<string, number> } {
-  const baseXp = 20
-  const perDomainXp = 15
-  const followUpBonus = 10
+// Danielson Framework domains and skills for auto-tagging
+const DANIELSON_FRAMEWORK = {
+  planning: {
+    name: 'Planning & Preparation',
+    skills: [
+      { id: 'objectives', name: 'Learning Objectives' },
+      { id: 'sequencing', name: 'Lesson Sequencing' },
+      { id: 'materials', name: 'Resource Preparation' },
+      { id: 'differentiation', name: 'Differentiation' },
+    ]
+  },
+  environment: {
+    name: 'Classroom Environment',
+    skills: [
+      { id: 'relationships', name: 'Building Relationships' },
+      { id: 'culture', name: 'Classroom Culture' },
+      { id: 'norms', name: 'Routines & Procedures' },
+      { id: 'student-voice', name: 'Student Voice & Agency' },
+    ]
+  },
+  instruction: {
+    name: 'Instruction',
+    skills: [
+      { id: 'questioning', name: 'Questioning Strategies' },
+      { id: 'engagement', name: 'Student Engagement' },
+      { id: 'clarity', name: 'Clear Explanations' },
+      { id: 'discussion', name: 'Facilitating Discussion' },
+      { id: 'pacing', name: 'Pacing & Flexibility' },
+    ]
+  },
+  assessment: {
+    name: 'Assessment',
+    skills: [
+      { id: 'formative', name: 'Formative Assessment' },
+      { id: 'feedback', name: 'Quality Feedback' },
+      { id: 'data-use', name: 'Using Data to Adjust' },
+      { id: 'self-assessment', name: 'Student Self-Assessment' },
+    ]
+  },
+}
 
-  const xpByDomain: Record<string, number> = {}
+// Auto-tag reflection using AI
+async function autoTagReflection(text: string): Promise<{ domain: string; skillId: string; skillName: string } | null> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) return null
 
-  // Distribute base XP to first domain (or 'instruction' as default)
-  const primaryDomain = domains[0] || 'instruction'
-  xpByDomain[primaryDomain] = baseXp
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
-  // Add per-domain XP
-  domains.forEach(domainId => {
-    xpByDomain[domainId] = (xpByDomain[domainId] || 0) + perDomainXp
-  })
+    const prompt = `Analyze this teacher reflection and categorize it using the Danielson Framework.
 
-  // Add follow-up bonus to primary domain
-  if (followUpResponse && followUpResponse.length > 20) {
-    xpByDomain[primaryDomain] = (xpByDomain[primaryDomain] || 0) + followUpBonus
+Reflection: "${text}"
+
+Categories:
+1. planning - Planning & Preparation (objectives, sequencing, materials, differentiation)
+2. environment - Classroom Environment (relationships, culture, norms, student-voice)
+3. instruction - Instruction (questioning, engagement, clarity, discussion, pacing)
+4. assessment - Assessment (formative, feedback, data-use, self-assessment)
+
+Respond with ONLY a JSON object like this (no markdown, no explanation):
+{"domain": "instruction", "skill": "questioning"}
+
+Choose the single best-fitting domain and skill based on what the teacher is reflecting about.`
+
+    const result = await model.generateContent(prompt)
+    const response = result.response.text().trim()
+
+    // Parse JSON response
+    const cleaned = response.replace(/```json\n?|\n?```/g, '').trim()
+    const parsed = JSON.parse(cleaned)
+
+    const domain = parsed.domain as keyof typeof DANIELSON_FRAMEWORK
+    const skillId = parsed.skill
+
+    if (DANIELSON_FRAMEWORK[domain]) {
+      const skill = DANIELSON_FRAMEWORK[domain].skills.find(s => s.id === skillId)
+      if (skill) {
+        return { domain, skillId: skill.id, skillName: skill.name }
+      }
+      // If skill not found, return just the domain with first skill
+      return { domain, skillId: DANIELSON_FRAMEWORK[domain].skills[0].id, skillName: DANIELSON_FRAMEWORK[domain].skills[0].name }
+    }
+  } catch (error) {
+    console.error('Auto-tag error:', error)
   }
 
-  const total = Object.values(xpByDomain).reduce((sum, xp) => sum + xp, 0)
-
-  return { total, byDomain: xpByDomain }
+  return null
 }
 
 // Helper to ensure demo user exists
@@ -72,7 +133,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as ReflectionInput
 
-    const { userId, primaryResponse, followUpResponse, domains, skillId, skillName, prompt } = body
+    let { userId, primaryResponse, followUpResponse, domains, skillId, skillName, prompt } = body
 
     if (!userId || !primaryResponse) {
       return NextResponse.json(
@@ -88,11 +149,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate XP
-    const { total: xpEarned, byDomain: xpByDomain } = calculateReflectionXp(
-      domains || [],
-      followUpResponse
-    )
+    // Auto-tag if domains not provided
+    if (!domains || domains.length === 0) {
+      const autoTag = await autoTagReflection(primaryResponse)
+      if (autoTag) {
+        domains = [autoTag.domain]
+        skillId = autoTag.skillId
+        skillName = autoTag.skillName
+      } else {
+        // Default to instruction if auto-tag fails
+        domains = ['instruction']
+      }
+    }
+
+    // XP is no longer used but keep structure for compatibility
+    const xpEarned = 0
+    const xpByDomain: Record<string, number> = {}
 
     // Create reflection and update user in transaction
     const result = await prisma.$transaction(async (tx: TransactionClient) => {

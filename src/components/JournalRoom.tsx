@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { ArrowLeft, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 import PixelCharacter, { CharacterCustomization, DEFAULT_CHARACTER } from './PixelCharacter'
 import { cn } from '@/lib/utils'
@@ -23,36 +23,14 @@ interface Props {
   onExit: () => void
 }
 
-// Domain and skill data for guided prompts
-const DOMAINS = [
-  { id: 'planning', name: 'Planning & Prep', skills: [
-    { id: 'objectives', name: 'Learning Objectives', prompt: 'How did you communicate or reinforce learning objectives today?' },
-    { id: 'sequencing', name: 'Lesson Sequencing', prompt: 'How did you structure your lesson flow today?' },
-    { id: 'materials', name: 'Resource Preparation', prompt: 'What resources or materials did you prepare that made a difference?' },
-    { id: 'differentiation', name: 'Differentiation', prompt: 'How did you plan for different learner needs today?' },
-  ]},
-  { id: 'environment', name: 'Classroom Culture', skills: [
-    { id: 'relationships', name: 'Building Relationships', prompt: 'Describe a moment where you connected with a student today.' },
-    { id: 'culture', name: 'Classroom Culture', prompt: 'How did you nurture your classroom culture today?' },
-    { id: 'norms', name: 'Routines & Procedures', prompt: 'How did routines or procedures support learning today?' },
-    { id: 'student-voice', name: 'Student Voice & Agency', prompt: 'How did students have voice or choice in their learning today?' },
-  ]},
-  { id: 'instruction', name: 'Instruction', skills: [
-    { id: 'questioning', name: 'Questioning Strategies', prompt: 'Describe a question you asked that sparked thinking.' },
-    { id: 'engagement', name: 'Student Engagement', prompt: 'What strategy did you use to engage students today?' },
-    { id: 'clarity', name: 'Clear Explanations', prompt: 'How did you make a concept clear or accessible today?' },
-    { id: 'discussion', name: 'Facilitating Discussion', prompt: 'Describe a moment of meaningful student discussion.' },
-    { id: 'pacing', name: 'Pacing & Flexibility', prompt: 'How did you adjust your pacing based on student needs?' },
-  ]},
-  { id: 'assessment', name: 'Assessment', skills: [
-    { id: 'formative', name: 'Formative Assessment', prompt: 'What formative assessment did you use today?' },
-    { id: 'feedback', name: 'Quality Feedback', prompt: 'Describe feedback you gave that helped a student grow.' },
-    { id: 'data-use', name: 'Using Data to Adjust', prompt: 'How did you use data to adjust your teaching today?' },
-    { id: 'self-assessment', name: 'Student Self-Assessment', prompt: 'How did students assess their own learning today?' },
-  ]},
+// Rotating prompts to keep it fresh
+const JOURNAL_PROMPTS = [
+  "What happened in your teaching today?",
+  "What moment from class is sticking with you?",
+  "What's on your mind about your practice?",
+  "Describe a moment from today's teaching.",
+  "What did you notice in your classroom today?",
 ]
-
-type JournalStep = 'idle' | 'mode' | 'domain' | 'skill' | 'reflect' | 'followup' | 'saving' | 'saved'
 
 export default function JournalRoom({ onExit }: Props) {
   const [character, setCharacter] = useState<CharacterCustomization>(DEFAULT_CHARACTER)
@@ -63,21 +41,16 @@ export default function JournalRoom({ onExit }: Props) {
   const [flipDirection, setFlipDirection] = useState<'left' | 'right'>('right')
 
   // Terminal state
-  const [step, setStep] = useState<JournalStep>('idle')
-  const [mode, setMode] = useState<'win' | 'growth' | null>(null)
-  const [selectedDomain, setSelectedDomain] = useState<string | null>(null)
-  const [selectedSkill, setSelectedSkill] = useState<string | null>(null)
+  const [isWriting, setIsWriting] = useState(false)
   const [input, setInput] = useState('')
+  const [currentPrompt, setCurrentPrompt] = useState('')
   const [terminalHistory, setTerminalHistory] = useState<Array<{ type: 'system' | 'user' | 'prompt'; text: string }>>([
-    { type: 'system', text: 'TEACHER JOURNAL v2.1 - Ready' },
-    { type: 'system', text: 'Type "new" to start a reflection, or browse your entries above.' },
+    { type: 'system', text: 'TEACHER JOURNAL v2.1' },
+    { type: 'system', text: 'Type "new" to start a reflection, or browse entries above.' },
   ])
+  const [isSaving, setIsSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const terminalRef = useRef<HTMLDivElement>(null)
-
-  // Reflection data being built
-  const [reflectionText, setReflectionText] = useState('')
-  const [followUpText, setFollowUpText] = useState('')
 
   // Load character
   useEffect(() => {
@@ -119,7 +92,7 @@ export default function JournalRoom({ onExit }: Props) {
   // Focus input
   useEffect(() => {
     inputRef.current?.focus()
-  }, [step])
+  }, [isWriting])
 
   const totalPages = Math.ceil(reflections.length / ENTRIES_PER_PAGE)
   const currentEntries = reflections.slice(
@@ -140,16 +113,10 @@ export default function JournalRoom({ onExit }: Props) {
   // Keyboard navigation for book
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle page navigation when not focused on input
       if (document.activeElement === inputRef.current) return
-
-      if (e.key === 'ArrowLeft') {
-        goToPage(currentPage - 1)
-      } else if (e.key === 'ArrowRight') {
-        goToPage(currentPage + 1)
-      } else if (e.key === 'Escape') {
-        onExit()
-      }
+      if (e.key === 'ArrowLeft') goToPage(currentPage - 1)
+      else if (e.key === 'ArrowRight') goToPage(currentPage + 1)
+      else if (e.key === 'Escape') onExit()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
@@ -159,135 +126,75 @@ export default function JournalRoom({ onExit }: Props) {
     setTerminalHistory(prev => [...prev, { type, text }])
   }
 
-  const getCurrentDomain = () => DOMAINS.find(d => d.id === selectedDomain)
-  const getCurrentSkill = () => getCurrentDomain()?.skills.find(s => s.id === selectedSkill)
+  const getRandomPrompt = () => {
+    return JOURNAL_PROMPTS[Math.floor(Math.random() * JOURNAL_PROMPTS.length)]
+  }
 
   const handleCommand = async (cmd: string) => {
     const trimmed = cmd.trim().toLowerCase()
 
-    if (step === 'idle') {
+    if (!isWriting) {
+      // Idle state - waiting for "new" command
       if (trimmed === 'new' || trimmed === 'n') {
         addToHistory('user', cmd)
+        const prompt = getRandomPrompt()
+        setCurrentPrompt(prompt)
         addToHistory('system', '')
-        addToHistory('prompt', 'How was your day? Type "win" or "growth"')
-        setStep('mode')
+        addToHistory('prompt', prompt)
+        setIsWriting(true)
       } else if (trimmed === 'exit' || trimmed === 'quit' || trimmed === 'q') {
         onExit()
       } else if (trimmed) {
         addToHistory('user', cmd)
-        addToHistory('system', 'Unknown command. Type "new" to start a reflection.')
+        addToHistory('system', 'Type "new" to start a reflection.')
       }
-    } else if (step === 'mode') {
-      addToHistory('user', cmd)
-      if (trimmed === 'win' || trimmed === 'w' || trimmed === '1') {
-        setMode('win')
-        addToHistory('system', 'Celebrating a win!')
-        addToHistory('system', '')
-        addToHistory('prompt', 'Which area? Type a number:')
-        DOMAINS.forEach((d, i) => addToHistory('system', `  ${i + 1}. ${d.name}`))
-        setStep('domain')
-      } else if (trimmed === 'growth' || trimmed === 'g' || trimmed === '2') {
-        setMode('growth')
-        addToHistory('system', 'Finding growth areas...')
-        addToHistory('system', '')
-        addToHistory('prompt', 'Which area? Type a number:')
-        DOMAINS.forEach((d, i) => addToHistory('system', `  ${i + 1}. ${d.name}`))
-        setStep('domain')
-      } else {
-        addToHistory('system', 'Please type "win" or "growth"')
-      }
-    } else if (step === 'domain') {
-      addToHistory('user', cmd)
-      const num = parseInt(trimmed)
-      if (num >= 1 && num <= DOMAINS.length) {
-        const domain = DOMAINS[num - 1]
-        setSelectedDomain(domain.id)
-        addToHistory('system', `Selected: ${domain.name}`)
-        addToHistory('system', '')
-        addToHistory('prompt', 'Which skill? Type a number:')
-        domain.skills.forEach((s, i) => addToHistory('system', `  ${i + 1}. ${s.name}`))
-        setStep('skill')
-      } else {
-        addToHistory('system', `Please type a number 1-${DOMAINS.length}`)
-      }
-    } else if (step === 'skill') {
-      addToHistory('user', cmd)
-      const domain = getCurrentDomain()
-      if (!domain) return
-      const num = parseInt(trimmed)
-      if (num >= 1 && num <= domain.skills.length) {
-        const skill = domain.skills[num - 1]
-        setSelectedSkill(skill.id)
-        addToHistory('system', `Selected: ${skill.name}`)
-        addToHistory('system', '')
-        addToHistory('prompt', skill.prompt)
-        addToHistory('system', '(Type your reflection and press Enter)')
-        setStep('reflect')
-      } else {
-        addToHistory('system', `Please type a number 1-${domain.skills.length}`)
-      }
-    } else if (step === 'reflect') {
+    } else {
+      // Writing state - capture the reflection
       if (cmd.trim().length < 10) {
         addToHistory('user', cmd)
-        addToHistory('system', 'Please write a bit more (at least 10 characters)')
+        addToHistory('system', 'Write a bit more (at least 10 characters).')
+        setInput('')
         return
       }
-      addToHistory('user', cmd)
-      setReflectionText(cmd)
-      addToHistory('system', '')
-      addToHistory('prompt', mode === 'win'
-        ? 'What made this work? (optional - press Enter to skip)'
-        : "What's one small step you could try tomorrow? (optional - press Enter to skip)"
-      )
-      setStep('followup')
-    } else if (step === 'followup') {
-      if (cmd.trim()) {
-        addToHistory('user', cmd)
-        setFollowUpText(cmd)
-      }
-      addToHistory('system', '')
-      addToHistory('system', 'Saving reflection...')
-      setStep('saving')
 
-      // Save the reflection
+      addToHistory('user', cmd)
+      addToHistory('system', '')
+      addToHistory('system', 'Saving...')
+      setIsSaving(true)
+
       try {
-        const domain = getCurrentDomain()
-        const skill = getCurrentSkill()
         const response = await fetch('/api/reflections', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: DEMO_USER_ID,
-            primaryResponse: reflectionText,
-            followUpResponse: cmd.trim() || undefined,
-            domains: [selectedDomain],
-            skillId: selectedSkill,
-            skillName: skill?.name,
-            prompt: skill?.prompt,
+            primaryResponse: cmd.trim(),
+            prompt: currentPrompt,
           }),
         })
 
         if (response.ok) {
-          addToHistory('system', 'Reflection saved!')
+          const data = await response.json()
+          const tagged = data.reflection?.skillName || data.reflection?.domains?.[0]
+          if (tagged) {
+            addToHistory('system', `Saved! Tagged as: ${tagged}`)
+          } else {
+            addToHistory('system', 'Saved!')
+          }
           addToHistory('system', '')
           addToHistory('system', 'Type "new" to add another entry.')
-          // Refresh reflections and go to first page
           await fetchReflections()
           setCurrentPage(0)
         } else {
-          addToHistory('system', 'Error saving. Please try again.')
+          addToHistory('system', 'Error saving. Try again.')
         }
       } catch (err) {
-        addToHistory('system', 'Error saving. Please try again.')
+        addToHistory('system', 'Error saving. Try again.')
       }
 
-      // Reset state
-      setStep('idle')
-      setMode(null)
-      setSelectedDomain(null)
-      setSelectedSkill(null)
-      setReflectionText('')
-      setFollowUpText('')
+      setIsWriting(false)
+      setCurrentPrompt('')
+      setIsSaving(false)
     }
 
     setInput('')
@@ -322,23 +229,13 @@ export default function JournalRoom({ onExit }: Props) {
       </div>
 
       {/* Journal Book */}
-      <div
-        className="relative"
-        style={{
-          perspective: '1500px',
-        }}
-      >
-        {/* Book cover/binding */}
+      <div className="relative" style={{ perspective: '1500px' }}>
         <div
           className="relative bg-gradient-to-r from-[#4A3728] via-[#5D4037] to-[#4A3728] rounded-lg p-2"
-          style={{
-            boxShadow: '0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.3)',
-          }}
+          style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.3)' }}
         >
-          {/* Binding spine decoration */}
           <div className="absolute left-1/2 top-0 bottom-0 w-4 -translate-x-1/2 bg-gradient-to-r from-[#3E2723] via-[#5D4037] to-[#3E2723]" />
 
-          {/* Open book pages */}
           <div className="flex">
             {/* Left page */}
             <motion.div
@@ -350,21 +247,14 @@ export default function JournalRoom({ onExit }: Props) {
               animate={isFlipping && flipDirection === 'left' ? { rotateY: [0, -15, 0] } : {}}
               transition={{ duration: 0.3 }}
             >
-              {/* Page curl effect */}
               <div className="absolute bottom-0 right-0 w-8 h-8 bg-gradient-to-tl from-[#E8D5C4] to-transparent" />
-
-              {/* Page number */}
               <div className="absolute bottom-2 left-4 text-xs text-[#8B7355] font-serif">
                 {currentPage * 2 + 1}
               </div>
 
-              {/* Content */}
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                  >
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
                     <BookOpen className="w-8 h-8 text-[#8B7355]" />
                   </motion.div>
                 </div>
@@ -374,9 +264,7 @@ export default function JournalRoom({ onExit }: Props) {
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <BookOpen className="w-12 h-12 text-[#C4A060] mb-4" />
                   <p className="text-[#5D4037] font-serif text-lg mb-2">Your journal awaits</p>
-                  <p className="text-[#8B7355] text-sm">
-                    Type &quot;new&quot; below to start reflecting.
-                  </p>
+                  <p className="text-[#8B7355] text-sm">Type &quot;new&quot; below to start.</p>
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-[#C4A060] font-serif italic">
@@ -395,15 +283,11 @@ export default function JournalRoom({ onExit }: Props) {
               animate={isFlipping && flipDirection === 'right' ? { rotateY: [0, 15, 0] } : {}}
               transition={{ duration: 0.3 }}
             >
-              {/* Page curl effect */}
               <div className="absolute bottom-0 left-0 w-8 h-8 bg-gradient-to-tr from-[#E8D5C4] to-transparent" />
-
-              {/* Page number */}
               <div className="absolute bottom-2 right-4 text-xs text-[#8B7355] font-serif">
                 {currentPage * 2 + 2}
               </div>
 
-              {/* Content */}
               {isLoading ? (
                 <div className="h-full" />
               ) : currentEntries[1] ? (
@@ -417,7 +301,6 @@ export default function JournalRoom({ onExit }: Props) {
           </div>
         </div>
 
-        {/* Page navigation */}
         {totalPages > 1 && (
           <div className="flex items-center justify-center gap-4 mt-3">
             <button
@@ -425,26 +308,18 @@ export default function JournalRoom({ onExit }: Props) {
               disabled={currentPage === 0 || isFlipping}
               className={cn(
                 'p-2 rounded-lg transition-colors',
-                currentPage === 0 || isFlipping
-                  ? 'text-slate-600 cursor-not-allowed'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                currentPage === 0 || isFlipping ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-slate-800'
               )}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-
-            <span className="text-xs text-slate-400 font-medium">
-              Page {currentPage + 1} of {totalPages}
-            </span>
-
+            <span className="text-xs text-slate-400 font-medium">Page {currentPage + 1} of {totalPages}</span>
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage >= totalPages - 1 || isFlipping}
               className={cn(
                 'p-2 rounded-lg transition-colors',
-                currentPage >= totalPages - 1 || isFlipping
-                  ? 'text-slate-600 cursor-not-allowed'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                currentPage >= totalPages - 1 || isFlipping ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white hover:bg-slate-800'
               )}
             >
               <ChevronRight className="w-5 h-5" />
@@ -458,11 +333,7 @@ export default function JournalRoom({ onExit }: Props) {
         className="w-full max-w-[680px] mt-4 bg-black border-2 border-[#333] rounded-lg overflow-hidden font-mono text-sm"
         style={{ boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)' }}
       >
-        {/* Terminal history */}
-        <div
-          ref={terminalRef}
-          className="h-32 overflow-y-auto p-3 space-y-1"
-        >
+        <div ref={terminalRef} className="h-28 overflow-y-auto p-3 space-y-1">
           {terminalHistory.map((line, i) => (
             <div
               key={i}
@@ -478,7 +349,6 @@ export default function JournalRoom({ onExit }: Props) {
           ))}
         </div>
 
-        {/* Input line */}
         <div className="border-t border-[#333] p-3 flex items-center gap-2">
           <span className="text-[#00ff00]">&gt;</span>
           <input
@@ -487,12 +357,13 @@ export default function JournalRoom({ onExit }: Props) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === 'Enter' && !isSaving) {
                 handleCommand(input)
               }
             }}
-            className="flex-1 bg-transparent text-[#00ff00] outline-none caret-[#00ff00]"
-            placeholder={step === 'idle' ? 'Type "new" to start...' : ''}
+            disabled={isSaving}
+            className="flex-1 bg-transparent text-[#00ff00] outline-none caret-[#00ff00] disabled:opacity-50"
+            placeholder={isWriting ? 'Write your reflection...' : 'Type "new" to start...'}
             autoFocus
           />
           <span className="text-[#00ff00] animate-pulse">_</span>
@@ -502,7 +373,6 @@ export default function JournalRoom({ onExit }: Props) {
   )
 }
 
-// Individual journal entry component
 function JournalEntry({
   entry,
   character,
@@ -523,7 +393,6 @@ function JournalEntry({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Entry header with character avatar */}
       <div className="flex items-start gap-2 mb-3 pb-2 border-b border-[#E8D5C4]">
         <div className="w-8 h-8 shrink-0">
           <PixelCharacter customization={character} size="sm" />
@@ -533,14 +402,11 @@ function JournalEntry({
             {formatDate(entry.createdAt)} • {formatTime(entry.createdAt)}
           </p>
           {entry.skillName && (
-            <p className="text-xs text-[#6B5B95] font-semibold truncate">
-              {entry.skillName}
-            </p>
+            <p className="text-xs text-[#6B5B95] font-semibold truncate">{entry.skillName}</p>
           )}
         </div>
       </div>
 
-      {/* Domain tag */}
       {entry.domains[0] && (
         <div className="mb-2">
           <span className="text-[9px] px-1.5 py-0.5 bg-[#E8D5C4] text-[#5D4037] rounded font-medium uppercase tracking-wide">
@@ -549,25 +415,10 @@ function JournalEntry({
         </div>
       )}
 
-      {/* Main content - handwriting style */}
       <div className="flex-1 overflow-hidden">
-        <p
-          className="text-sm text-[#2C1810] leading-[28px]"
-          style={{ fontFamily: 'Georgia, serif' }}
-        >
+        <p className="text-sm text-[#2C1810] leading-[28px]" style={{ fontFamily: 'Georgia, serif' }}>
           {entry.primaryResponse}
         </p>
-
-        {entry.followUpResponse && (
-          <div className="mt-3 pt-2 border-t border-dashed border-[#D4C4B0]">
-            <p
-              className="text-xs text-[#5D4037] leading-[28px] italic"
-              style={{ fontFamily: 'Georgia, serif' }}
-            >
-              &quot;{entry.followUpResponse}&quot;
-            </p>
-          </div>
-        )}
       </div>
     </div>
   )
